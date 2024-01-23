@@ -57,6 +57,9 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define FAN1_TIM htim2
+#define FAN2_TIM htim5
+#define ENC_TIM htim3
 #define USER_Btn_Pin GPIO_PIN_13
 #define USER_Btn_GPIO_Port GPIOC
 #define MCO_Pin GPIO_PIN_0
@@ -69,12 +72,8 @@ void Error_Handler(void);
 #define STLK_RX_GPIO_Port GPIOD
 #define STLK_TX_Pin GPIO_PIN_9
 #define STLK_TX_GPIO_Port GPIOD
-#define FAN1_TACHO_Pin GPIO_PIN_2
-#define FAN1_TACHO_GPIO_Port GPIOG
 #define FAN2_TACHO_Pin GPIO_PIN_3
 #define FAN2_TACHO_GPIO_Port GPIOG
-#define USB_PowerSwitchOn_Pin GPIO_PIN_6
-#define USB_PowerSwitchOn_GPIO_Port GPIOG
 #define USB_OverCurrent_Pin GPIO_PIN_7
 #define USB_OverCurrent_GPIO_Port GPIOG
 #define TMS_Pin GPIO_PIN_13
