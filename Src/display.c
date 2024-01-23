@@ -1,8 +1,6 @@
 #include "display.h"
-#include "i2c.h"
 
-void display_init()
+void display_init(I2C_HandleTypeDef *hi2c)
 {
     // TODO: this is boilerplate, change it
-    i2c_init();
 }
