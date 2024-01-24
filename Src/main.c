@@ -52,6 +52,12 @@
 
 /* USER CODE BEGIN PV */
 
+// This is here so we can sanely draw PWM signals using SWV or sth
+// I hate using global vars for this, but oh well
+uint16_t pwm_fan1_duty = 0;
+uint16_t pwm_fan2_duty = 0;
+uint16_t pwm_fan3_duty = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -101,6 +107,7 @@ int main(void)
   MX_RTC_Init();
   MX_TIM3_Init();
   MX_TIM5_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -112,6 +119,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
     /* blink this dumb fucker */
     // HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
     // HAL_Delay(100);
@@ -119,6 +127,7 @@ int main(void)
     // HAL_Delay(100);
     // HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
     // HAL_Delay(100);
+    
   }
   /* USER CODE END 3 */
 }
@@ -145,7 +154,7 @@ void SystemClock_Config(void)
   * in the RCC_OscInitTypeDef structure.
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
@@ -184,27 +193,6 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
-
-/**
-  * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM8 interrupt took place, inside
-  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
-  * a global variable "uwTick" used as application time base.
-  * @param  htim : TIM handle
-  * @retval None
-  */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  /* USER CODE BEGIN Callback 0 */
-
-  /* USER CODE END Callback 0 */
-  if (htim->Instance == TIM8) {
-    HAL_IncTick();
-  }
-  /* USER CODE BEGIN Callback 1 */
-
-  /* USER CODE END Callback 1 */
-}
 
 /**
   * @brief  This function is executed in case of error occurrence.
