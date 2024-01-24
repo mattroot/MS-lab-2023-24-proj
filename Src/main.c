@@ -27,6 +27,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "display.h"
+#include "pwm_fan.h"
+#include "temp_sensor.h"
 
 /* USER CODE END Includes */
 
