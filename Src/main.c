@@ -106,7 +106,6 @@ int main(void)
   MX_USART3_UART_Init();
   MX_RTC_Init();
   MX_TIM3_Init();
-  MX_TIM5_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
@@ -121,12 +120,8 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
     /* blink this dumb fucker */
-    // HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-    // HAL_Delay(100);
-    // HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-    // HAL_Delay(100);
-    // HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-    // HAL_Delay(100);
+    HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+    HAL_Delay(1000);
     
   }
   /* USER CODE END 3 */
