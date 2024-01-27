@@ -20,7 +20,6 @@
 #include "main.h"
 #include "crc.h"
 #include "i2c.h"
-#include "rtc.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -52,10 +51,16 @@
 
 /* USER CODE BEGIN PV */
 
-// This is here so we can sanely draw PWM signals using SWV or sth
-// I hate using global vars for this, but oh well
+// Declare public variables to draw PWM signals using SWV
 uint16_t pwm_fan1_state = 0;
 uint16_t pwm_fan2_state = 0;
+
+uint16_t pwm_fan1_speed = 0;
+uint16_t pwm_fan2_speed = 0;
+
+// fan handles
+PWM_Fan_HandleTypeDef fan1;
+PWM_Fan_HandleTypeDef fan2;
 
 /* USER CODE END PV */
 
@@ -103,10 +108,13 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM2_Init();
   MX_USART3_UART_Init();
-  MX_RTC_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
+
+  // initialize fans
+  pwm_fan_init(&fan1, &htim3, &htim3, 0, 1);
+  pwm_fan_init(&fan2, &htim4, &htim3, 0, 1);
 
   /* USER CODE END 2 */
 
@@ -117,7 +125,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
+	  pwm_fan_update(&fan1);
+	  pwm_fan_update(&fan2);
   }
   /* USER CODE END 3 */
 }
@@ -143,9 +152,8 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 4;
@@ -183,6 +191,27 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM8 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM8) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
