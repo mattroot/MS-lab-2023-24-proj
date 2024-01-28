@@ -29,6 +29,8 @@
 #include "display.h"
 #include "pwm_fan.h"
 #include "temp_sensor.h"
+#include "serial.h"
+#include "await.h"
 
 /* USER CODE END Includes */
 
@@ -51,17 +53,16 @@
 
 /* USER CODE BEGIN PV */
 
-// Declare public variables to draw PWM signals using SWV
-uint16_t pwm_fan1_state = 0;
-uint16_t pwm_fan2_state = 0;
 
-uint16_t pwm_fan1_speed = 0;
-uint16_t pwm_fan2_speed = 0;
-
-// fan handles
+// I'm going nuts
 PWM_Fan_HandleTypeDef fan1;
 PWM_Fan_HandleTypeDef fan2;
 
+uint16_t fan1_state=0;
+uint16_t fan2_state=0;
+
+uint16_t fan1_speed=0;
+uint16_t fan2_speed=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -112,9 +113,12 @@ int main(void)
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
+  // start all the timers
+  HAL_TIM_Base_Start_IT(&htim2);
+
   // initialize fans
-  pwm_fan_init(&fan1, &htim3, &htim3, 0, 1);
-  pwm_fan_init(&fan2, &htim4, &htim3, 0, 1);
+  pwm_fan_init(&fan1, &htim3, &htim3, TIM_CHANNEL_1, TIM_CHANNEL_2);
+  pwm_fan_init(&fan2, &htim4, &htim4, TIM_CHANNEL_1, TIM_CHANNEL_2);
 
   /* USER CODE END 2 */
 
@@ -125,8 +129,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  pwm_fan_update(&fan1);
-	  pwm_fan_update(&fan2);
+
   }
   /* USER CODE END 3 */
 }
@@ -190,6 +193,16 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
+	// This is pure insanity, don't you ever dare do it like this
+	if(htim->Instance == TIM3) {
+		fan1_speed = pwm_fan_update_speed(&fan1);
+	}
+	if(htim->Instance == TIM4) {
+		fan2_speed = pwm_fan_update_speed(&fan2);
+	}
+}
+
 /* USER CODE END 4 */
 
 /**
@@ -203,6 +216,13 @@ void SystemClock_Config(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
+
+	if (htim->Instance == TIM3) {
+	    pwm_fan_update(&fan1);
+	  }
+	else if (htim->Instance == TIM4) {
+	    pwm_fan_update(&fan2);
+	  }
 
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM8) {
