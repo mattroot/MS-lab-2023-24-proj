@@ -31,7 +31,7 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
     pwm_fan_calibrate(fan);
 
     // get controller gain
-    fan->ctrl_gain = (float)fan->autoreload / (fan->max_speed - fan->min_speed);
+    fan->ctrl_gain = 1.0 / ((fan->max_speed - fan->min_speed) / fan->autoreload);
 
     // during init sanely set the speed to around half
     pwm_fan_set(fan, (int) (fan->max_speed - fan->min_speed) / 200 * 100);
@@ -39,20 +39,28 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
 
 void pwm_fan_calibrate(PWM_Fan_HandleTypeDef *fan)
 {
-	await(PWM_FAN_CALIBRATION_INIT_DELAY);
+//	HAL_Delay(PWM_FAN_CALIBRATION_INIT_DELAY);
+//
+//	// Stop it, check speed
+//	__HAL_TIM_SET_COMPARE(fan->htim_pwm, fan->pwm_channel, fan->autoreload);
+//	HAL_Delay(PWM_FAN_CALIBRATION_DELAY);
+//	pwm_fan_update(fan);
+//	fan->max_speed = fan->current_speed;
+//
+//	// Spin it up to max, get speed
+//	__HAL_TIM_SET_COMPARE(fan->htim_pwm, fan->pwm_channel,
+//			fan->autoreload - (uint16_t)(6 * fan->autoreload / 100));
+//	HAL_Delay(PWM_FAN_CALIBRATION_DELAY);
+//	pwm_fan_update(fan);
+//	fan->min_speed = fan->current_speed;
 
-	// Stop it, check speed
-	__HAL_TIM_SET_COMPARE(fan->htim_pwm, fan->pwm_channel, fan->autoreload);
-	await(PWM_FAN_CALIBRATION_DELAY);
-	pwm_fan_update(fan);
+	// It's always on full speed when starting
+	// Wait for a result
+	while(fan->current_speed < 10) pwm_fan_update(fan);
 	fan->max_speed = fan->current_speed;
 
-	// Spin it up to max, get speed
-	__HAL_TIM_SET_COMPARE(fan->htim_pwm, fan->pwm_channel,
-			fan->autoreload - (uint16_t)(6 * fan->autoreload / 100));
-	await(PWM_FAN_CALIBRATION_DELAY);
-	pwm_fan_update(fan);
-	fan->min_speed = fan->current_speed;
+	// assume it's always stopped for duty cycle 0
+	fan->min_speed = 0;
 
 	// Set it to half during init
 	pwm_fan_set_duty_cycle(fan, 50);
@@ -126,13 +134,13 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan)
 				new_compare);
 	}
 
-//	if(pwm_fan_is_stopped(fan)) fan->current_speed = 0.0f;
+	if(pwm_fan_is_stopped(fan)) fan->current_speed = 0.0f;
     return fan->current_speed;
 }
 
 _Bool pwm_fan_is_stopped(PWM_Fan_HandleTypeDef *fan) {
 	uint32_t metric = __HAL_TIM_GET_COMPARE(fan->htim_tacho, fan->tacho_channel);
-	if(metric - fan->current_read < TACHO_STOPPED_THRESHOLD) return 1;
+	if(metric - fan->current_read > TACHO_STOPPED_THRESHOLD) return 1;
 	return 0;
 }
 

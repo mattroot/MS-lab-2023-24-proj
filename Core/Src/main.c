@@ -196,10 +196,10 @@ void SystemClock_Config(void)
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	// This is pure insanity, don't you ever dare do it like this
 	if(htim->Instance == TIM3) {
-		fan1_speed = pwm_fan_update_speed(&fan1);
+		pwm_fan_update_speed(&fan1);
 	}
 	if(htim->Instance == TIM4) {
-		fan2_speed = pwm_fan_update_speed(&fan2);
+		pwm_fan_update_speed(&fan2);
 	}
 }
 
@@ -218,10 +218,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 0 */
 
 	if (htim->Instance == TIM3) {
-	    pwm_fan_update(&fan1);
+	    fan1_speed = pwm_fan_update(&fan1);
 	  }
 	else if (htim->Instance == TIM4) {
-	    pwm_fan_update(&fan2);
+	    fan2_speed = pwm_fan_update(&fan2);
 	  }
 
   /* USER CODE END Callback 0 */
