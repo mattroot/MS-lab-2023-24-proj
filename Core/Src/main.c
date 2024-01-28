@@ -114,6 +114,8 @@ int main(void)
 
   // start all the timers
   HAL_TIM_Base_Start_IT(&htim2);
+  HAL_TIM_Base_Start_IT(&htim3);
+  HAL_TIM_Base_Start_IT(&htim4);
 
   // initialize fans
   pwm_fan_init(&fan1, &htim3, &htim3, TIM_CHANNEL_1, TIM_CHANNEL_2);
