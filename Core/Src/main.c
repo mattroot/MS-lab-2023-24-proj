@@ -66,6 +66,7 @@ uint16_t fan2_speed=0;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+size_t strlen(const char *str);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -105,10 +106,10 @@ int main(void)
   MX_GPIO_Init();
   MX_CRC_Init();
   MX_I2C1_Init();
-  MX_TIM2_Init();
   MX_USART3_UART_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 
   // initialize I2C display
@@ -116,9 +117,9 @@ int main(void)
   display_print(&hi2c1, "test");
 
   // start all the timers
-  HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_TIM_Base_Start_IT(&htim4);
+  HAL_TIM_Base_Start_IT(&htim5);
 
   // initialize fans
   pwm_fan_init(&fan1, &htim3, &htim3, TIM_CHANNEL_1, TIM_CHANNEL_2);
@@ -126,7 +127,7 @@ int main(void)
   fan1.max_speed = 1400;
   fan1.min_speed = 200;
   fan1.start_duty_cycle = 5;
-  fan1.target_speed =  1200;
+  fan1.target_speed =  800;
   fan1.ctrl_inertia = fan1.start_duty_cycle * (fan1.autoreload / 100);
   fan1.ctrl_gain = (fan1.autoreload - fan1.ctrl_inertia) / (fan1.max_speed - fan1.min_speed);
   fan1.mode = PWM_FAN_PCONTROL;
@@ -140,6 +141,9 @@ int main(void)
   fan2.ctrl_inertia = fan2.start_duty_cycle * (fan2.autoreload / 100);
   fan2.ctrl_gain = (fan2.autoreload - fan2.ctrl_inertia) / (fan2.max_speed - fan2.min_speed);
   fan2.mode = PWM_FAN_PCONTROL;
+
+  // Start serial output timer
+  HAL_TIM_PWM_Start_IT(&htim5, TIM_CHANNEL_1);
 
   /* USER CODE END 2 */
 
@@ -213,6 +217,12 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+size_t strlen(const char *str)
+{
+    const char *s;
+    for (s = str; *s; ++s);
+    return(s - str);
+}
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	// This is pure insanity, don't you ever dare do it like this
@@ -222,6 +232,25 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	if(htim->Instance == TIM4) {
 		pwm_fan_update_speed(&fan2);
 	}
+}
+
+void uart_post_sensors() {
+	char buffer[100] = "";
+	sprintf(buffer, "fan1,%f,%f,%f,%u\r\n",
+			fan1.current_speed,
+			fan1.target_duty_cycle,
+			fan1.target_speed,
+			(uint16_t)fan1.mode
+			);
+	HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 100);
+
+	sprintf(buffer, "fan2,%f,%f,%f,%u\r\n",
+			fan2.current_speed,
+			fan2.target_duty_cycle,
+			fan2.target_speed,
+			(uint16_t)fan2.mode
+			);
+	HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 100);
 }
 
 /* USER CODE END 4 */
@@ -240,8 +269,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 	if (htim->Instance == TIM3) {
 	    fan1_speed = pwm_fan_update(&fan1);
+
 	  }
-	else if (htim->Instance == TIM4) {
+	if (htim->Instance == TIM4) {
 	    fan2_speed = pwm_fan_update(&fan2);
 	  }
 
