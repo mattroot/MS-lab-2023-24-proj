@@ -30,7 +30,6 @@
 #include "pwm_fan.h"
 #include "temp_sensor.h"
 #include "serial.h"
-#include "await.h"
 
 /* USER CODE END Includes */
 
@@ -112,6 +111,10 @@ int main(void)
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
+  // initialize I2C display
+  display_init(&hi2c1);
+  display_print(&hi2c1, "test");
+
   // start all the timers
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_Base_Start_IT(&htim3);
@@ -119,7 +122,24 @@ int main(void)
 
   // initialize fans
   pwm_fan_init(&fan1, &htim3, &htim3, TIM_CHANNEL_1, TIM_CHANNEL_2);
+  // manual calibration - fan 1
+  fan1.max_speed = 1400;
+  fan1.min_speed = 200;
+  fan1.start_duty_cycle = 5;
+  fan1.target_speed =  1200;
+  fan1.ctrl_inertia = fan1.start_duty_cycle * (fan1.autoreload / 100);
+  fan1.ctrl_gain = (fan1.autoreload - fan1.ctrl_inertia) / (fan1.max_speed - fan1.min_speed);
+  fan1.mode = PWM_FAN_PCONTROL;
+
   pwm_fan_init(&fan2, &htim4, &htim4, TIM_CHANNEL_1, TIM_CHANNEL_2);
+  // manual calibration - fan 2
+  fan2.max_speed = 3000;
+  fan2.min_speed = 200;
+  fan2.start_duty_cycle = 5;
+  fan2.target_speed =  1800;
+  fan2.ctrl_inertia = fan2.start_duty_cycle * (fan2.autoreload / 100);
+  fan2.ctrl_gain = (fan2.autoreload - fan2.ctrl_inertia) / (fan2.max_speed - fan2.min_speed);
+  fan2.mode = PWM_FAN_PCONTROL;
 
   /* USER CODE END 2 */
 

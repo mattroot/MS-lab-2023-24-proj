@@ -27,6 +27,7 @@ typedef struct {
     // fan speed monitoring
     float current_speed;
     float speed_error;
+    float ctrl_error;
 
     // TACHO estimation helpers
     uint16_t last_read;
@@ -38,6 +39,7 @@ typedef struct {
 
     // controller settings
     float ctrl_gain;
+    uint16_t ctrl_inertia;
     uint16_t mode;
 } PWM_Fan_HandleTypeDef;
 
@@ -45,8 +47,10 @@ enum PWM_FAN_CTRL_MODE {
 	PWM_FAN_DIRECT,
 	PWM_FAN_PCONTROL,
 	PWM_FAN_CALIBRATION_START,
+	PWM_FAN_CALIBRATION_START_LEVEL,
 	PWM_FAN_CALIBRATION_MIN_SPEED,
-	PWM_FAN_CALIBRATION_MAX_SPEED
+	PWM_FAN_CALIBRATION_MAX_SPEED,
+	PWM_FAN_UNCONFIGURED
 };
 
 void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
@@ -54,13 +58,12 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
 		TIM_HandleTypeDef *htim_tacho,
 		uint16_t pwm_channel,
 		uint16_t tacho_channel);
-void pwm_fan_calibrate(PWM_Fan_HandleTypeDef *fan);
+void pwm_fan_schedule_calibration(PWM_Fan_HandleTypeDef *fan);
 void pwm_fan_set(PWM_Fan_HandleTypeDef *fan, float target_speed);
 void pwm_fan_set_duty_cycle(PWM_Fan_HandleTypeDef *fan, float target_duty_cycle);
+float pwm_fan_set_duty_cycle_raw(PWM_Fan_HandleTypeDef *fan, uint16_t compare_register);
 float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan);
 float pwm_fan_update(PWM_Fan_HandleTypeDef *fan);
 _Bool pwm_fan_is_stopped(PWM_Fan_HandleTypeDef *fan);
-
-extern TIM_HandleTypeDef *await_timer;
 
 #endif //PWM_FAN_H
