@@ -78,7 +78,7 @@ void pwm_fan_set_duty_cycle(PWM_Fan_HandleTypeDef *fan, float duty_cycle) {
 	}
 	fan->target_duty_cycle = duty_cycle;
 	__HAL_TIM_SET_COMPARE(fan->htim_pwm, fan->pwm_channel,
-					fan->autoreload - (uint16_t)(fan->target_speed * fan->autoreload / 100));
+					fan->autoreload - (uint16_t)(fan->target_duty_cycle * fan->autoreload / 100));
 }
 
 float pwm_fan_set_duty_cycle_raw(PWM_Fan_HandleTypeDef *fan, uint16_t compare_register) {

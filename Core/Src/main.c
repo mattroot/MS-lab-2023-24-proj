@@ -57,16 +57,12 @@
 PWM_Fan_HandleTypeDef fan1;
 PWM_Fan_HandleTypeDef fan2;
 
-uint16_t fan1_state=0;
-uint16_t fan2_state=0;
-
 uint16_t fan1_speed=0;
 uint16_t fan2_speed=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-size_t strlen(const char *str);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -127,7 +123,7 @@ int main(void)
   fan1.max_speed = 1400;
   fan1.min_speed = 200;
   fan1.start_duty_cycle = 5;
-  fan1.target_speed =  800;
+  fan1.target_speed =  1000;
   fan1.ctrl_inertia = fan1.start_duty_cycle * (fan1.autoreload / 100);
   fan1.ctrl_gain = (fan1.autoreload - fan1.ctrl_inertia) / (fan1.max_speed - fan1.min_speed);
   fan1.mode = PWM_FAN_PCONTROL;
@@ -181,7 +177,7 @@ void SystemClock_Config(void)
   * in the RCC_OscInitTypeDef structure.
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 4;
