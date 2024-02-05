@@ -14,7 +14,9 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
 
     // constant registers for easy access
     fan->autoreload = __HAL_TIM_GET_AUTORELOAD(htim_pwm);
-    fan->prescaler = __HAL_TIM_GET_ICPRESCALER(fan->htim_tacho, fan->tacho_channel);
+    fan->prescaler = __HAL_TIM_GET_ICPRESCALER(htim_pwm, pwm_channel);
+    fan->tacho_autoreload = __HAL_TIM_GET_AUTORELOAD(htim_tacho);
+    fan->tacho_prescaler = __HAL_TIM_GET_ICPRESCALER(htim_tacho, tacho_channel);
 
     // fan characteristics
     fan->max_speed = 0;
@@ -96,12 +98,12 @@ float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan) {
 	fan->current_read = __HAL_TIM_GET_COMPARE(fan->htim_tacho, fan->tacho_channel);
 
 	// Calculate the time between the falling edges
-	uint16_t timeDiff = fan->current_read - fan->last_read;
+	uint32_t timeDiff = fan->current_read - fan->last_read;
 
 	// Calculate the speed of the fan
 	fan->current_speed =
-			60.0 * APB1PERIPH_BASE / (timeDiff * TACHO_PULSE_PER_REV
-			* (fan->prescaler+1) * (fan->autoreload+1));
+				60.0 * APB1PERIPH_BASE / (timeDiff * TACHO_PULSE_PER_REV
+				* (fan->tacho_prescaler+1) * (fan->tacho_autoreload+1));
 
 	return fan->current_speed;
 }

@@ -106,6 +106,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_TIM5_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   // initialize I2C display
@@ -113,12 +114,13 @@ int main(void)
   display_print(&hi2c1, "test");
 
   // start all the timers
+  HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_TIM_Base_Start_IT(&htim4);
   HAL_TIM_Base_Start_IT(&htim5);
 
   // initialize fans
-  pwm_fan_init(&fan1, &htim3, &htim3, TIM_CHANNEL_1, TIM_CHANNEL_2);
+  pwm_fan_init(&fan1, &htim3, &htim2, TIM_CHANNEL_1, TIM_CHANNEL_1);
   // manual calibration - fan 1
   fan1.max_speed = 1400;
   fan1.min_speed = 200;
@@ -128,7 +130,7 @@ int main(void)
   fan1.ctrl_gain = (fan1.autoreload - fan1.ctrl_inertia) / (fan1.max_speed - fan1.min_speed);
   fan1.mode = PWM_FAN_PCONTROL;
 
-  pwm_fan_init(&fan2, &htim4, &htim4, TIM_CHANNEL_1, TIM_CHANNEL_2);
+  pwm_fan_init(&fan2, &htim4, &htim2, TIM_CHANNEL_1, TIM_CHANNEL_3);
   // manual calibration - fan 2
   fan2.max_speed = 3000;
   fan2.min_speed = 200;
@@ -222,11 +224,11 @@ size_t strlen(const char *str)
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	// This is pure insanity, don't you ever dare do it like this
-	if(htim->Instance == TIM3) {
-		pwm_fan_update_speed(&fan1);
-	}
-	if(htim->Instance == TIM4) {
-		pwm_fan_update_speed(&fan2);
+	if(htim->Instance == TIM2) {
+		if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
+			pwm_fan_update_speed(&fan1);
+		if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)
+			pwm_fan_update_speed(&fan2);
 	}
 }
 

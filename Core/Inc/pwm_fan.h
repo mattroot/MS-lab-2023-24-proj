@@ -14,6 +14,8 @@ typedef struct {
     // constant registers for easy access
     uint16_t autoreload;
     uint16_t prescaler;
+    uint32_t tacho_autoreload;
+    uint16_t tacho_prescaler;
 
     // fan characteristics
     float max_speed;
@@ -30,8 +32,8 @@ typedef struct {
     float ctrl_error;
 
     // TACHO estimation helpers
-    uint16_t last_read;
-    uint16_t current_read;
+    uint32_t last_read;
+    uint32_t current_read;
 
     // calibration helpers
     uint16_t calibration_halt_counter;
