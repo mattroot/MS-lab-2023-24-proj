@@ -102,7 +102,7 @@ float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan) {
 
 	// Calculate the speed of the fan
 	fan->current_speed =
-				60.0 * APB1PERIPH_BASE / (timeDiff * TACHO_PULSE_PER_REV
+				60.0 * HAL_RCC_GetPCLK1Freq() / (timeDiff * TACHO_PULSE_PER_REV
 				* (fan->tacho_prescaler+1) * (fan->tacho_autoreload+1));
 
 	return fan->current_speed;

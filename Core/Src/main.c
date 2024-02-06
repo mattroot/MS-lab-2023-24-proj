@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "crc.h"
+#include "dma.h"
 #include "i2c.h"
 #include "tim.h"
 #include "usart.h"
@@ -26,7 +27,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "display.h"
+#include "lcd.h"
+#include "lcd_config.h"
 #include "pwm_fan.h"
 #include "temp_sensor.h"
 #include "serial.h"
@@ -100,18 +102,35 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_CRC_Init();
+  MX_DMA_Init();
   MX_I2C1_Init();
   MX_USART3_UART_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_TIM5_Init();
   MX_TIM2_Init();
+  MX_CRC_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
   // initialize I2C display
-  display_init(&hi2c1);
-  display_print(&hi2c1, "test");
+  LCD_I2C_Init(&hlcd3);
+//  LCD_I2C_printStr(&hlcd3, "Fan1:1234RPM D:50%");
+//  LCD_I2C_SetCursor(&hlcd3, 1, 0);
+//  LCD_I2C_printStr(&hlcd3, "Fan2:1345RPM D:23%");
+//  LCD_I2C_SetCursor(&hlcd3, 2, 0);
+//  LCD_I2C_printStr(&hlcd3, "Temp:30C");
+//  LCD_I2C_SetCursor(&hlcd3, 3, 0);
+//  LCD_I2C_printStr(&hlcd3, "-Click to configure-");
+
+  LCD_I2C_printStr(&hlcd3, "SNSR READ TRGT DUTY");
+  LCD_I2C_SetCursor(&hlcd3, 1, 0);
+  LCD_I2C_printStr(&hlcd3, "Fan1 1345 1300 60%");
+  LCD_I2C_SetCursor(&hlcd3, 2, 0);
+  LCD_I2C_printStr(&hlcd3, "Fan2 1223 1200 45%");
+  LCD_I2C_SetCursor(&hlcd3, 3, 0);
+  LCD_I2C_printStr(&hlcd3, "Temp 30");
+
 
   // start all the timers
   HAL_TIM_Base_Start_IT(&htim2);
@@ -125,7 +144,7 @@ int main(void)
   fan1.max_speed = 1400;
   fan1.min_speed = 200;
   fan1.start_duty_cycle = 5;
-  fan1.target_speed =  1000;
+  fan1.target_speed =  600;
   fan1.ctrl_inertia = fan1.start_duty_cycle * (fan1.autoreload / 100);
   fan1.ctrl_gain = (fan1.autoreload - fan1.ctrl_inertia) / (fan1.max_speed - fan1.min_speed);
   fan1.mode = PWM_FAN_PCONTROL;
@@ -135,7 +154,7 @@ int main(void)
   fan2.max_speed = 3000;
   fan2.min_speed = 200;
   fan2.start_duty_cycle = 5;
-  fan2.target_speed =  1800;
+  fan2.target_speed =  1200;
   fan2.ctrl_inertia = fan2.start_duty_cycle * (fan2.autoreload / 100);
   fan2.ctrl_gain = (fan2.autoreload - fan2.ctrl_inertia) / (fan2.max_speed - fan2.min_speed);
   fan2.mode = PWM_FAN_PCONTROL;
@@ -215,6 +234,13 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/**
+  * @brief  strlen implementation from FreeBSD
+  * @note   Returns length of a string inside a char array
+  * @param  str : string
+  * @retval String length
+  */
 size_t strlen(const char *str)
 {
     const char *s;
