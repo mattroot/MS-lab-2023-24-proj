@@ -54,6 +54,9 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 void uart_post_sensors();
+void prepare_display();
+void update_display();
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

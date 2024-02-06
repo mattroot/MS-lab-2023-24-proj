@@ -32,6 +32,7 @@
 #include "pwm_fan.h"
 #include "temp_sensor.h"
 #include "serial.h"
+#include "strhelp.h"
 
 /* USER CODE END Includes */
 
@@ -114,22 +115,12 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   // initialize I2C display
-  LCD_I2C_Init(&hlcd3);
-//  LCD_I2C_printStr(&hlcd3, "Fan1:1234RPM D:50%");
-//  LCD_I2C_SetCursor(&hlcd3, 1, 0);
-//  LCD_I2C_printStr(&hlcd3, "Fan2:1345RPM D:23%");
-//  LCD_I2C_SetCursor(&hlcd3, 2, 0);
-//  LCD_I2C_printStr(&hlcd3, "Temp:30C");
-//  LCD_I2C_SetCursor(&hlcd3, 3, 0);
-//  LCD_I2C_printStr(&hlcd3, "-Click to configure-");
-
-  LCD_I2C_printStr(&hlcd3, "SNSR READ TRGT DUTY");
-  LCD_I2C_SetCursor(&hlcd3, 1, 0);
-  LCD_I2C_printStr(&hlcd3, "Fan1 1345 1300 60%");
-  LCD_I2C_SetCursor(&hlcd3, 2, 0);
-  LCD_I2C_printStr(&hlcd3, "Fan2 1223 1200 45%");
-  LCD_I2C_SetCursor(&hlcd3, 3, 0);
-  LCD_I2C_printStr(&hlcd3, "Temp 30");
+  // workaround: run the init a few times to make sure the display is empty
+  for(int i = 0; i <= 3; i++) {
+	  LCD_I2C_Init(&hlcd3);
+	  HAL_Delay(500);
+  }
+  prepare_display();
 
 
   // start all the timers
@@ -235,19 +226,6 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-/**
-  * @brief  strlen implementation from FreeBSD
-  * @note   Returns length of a string inside a char array
-  * @param  str : string
-  * @retval String length
-  */
-size_t strlen(const char *str)
-{
-    const char *s;
-    for (s = str; *s; ++s);
-    return(s - str);
-}
-
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	// This is pure insanity, don't you ever dare do it like this
 	if(htim->Instance == TIM2) {
@@ -275,6 +253,53 @@ void uart_post_sensors() {
 			(uint16_t)fan2.mode
 			);
 	HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 100);
+}
+
+void prepare_display() {
+  LCD_I2C_printStr(&hlcd3, "SNSR READ TRGT DUTY");
+  LCD_I2C_SetCursor(&hlcd3, 1, 0);
+  LCD_I2C_printStr(&hlcd3, "Fan1");
+  LCD_I2C_SetCursor(&hlcd3, 2, 0);
+  LCD_I2C_printStr(&hlcd3, "Fan2");
+  LCD_I2C_SetCursor(&hlcd3, 3, 0);
+  LCD_I2C_printStr(&hlcd3, "Temp");
+}
+
+void update_display() {
+	// fan 1
+	LCD_I2C_SetCursor(&hlcd3, 1, 5);
+	switch(fan1.mode) {
+	case PWM_FAN_CALIBRATION_START:
+	case PWM_FAN_CALIBRATION_MIN_SPEED:
+	case PWM_FAN_CALIBRATION_MAX_SPEED:
+		LCD_I2C_printStr(&hlcd3, "Calibrating...");
+		break;
+	case PWM_FAN_UNCONFIGURED:
+		LCD_I2C_printStr(&hlcd3, "Unconfigured");
+	case PWM_FAN_DIRECT:
+	case PWM_FAN_PCONTROL:
+	default:
+		LCD_I2C_printStr(&hlcd3, "!!! ERROR !!!");
+		break;
+	}
+
+	// fan 2
+	LCD_I2C_SetCursor(&hlcd3, 2, 5);
+	switch(fan2.mode) {
+	case PWM_FAN_CALIBRATION_START:
+	case PWM_FAN_CALIBRATION_MIN_SPEED:
+	case PWM_FAN_CALIBRATION_MAX_SPEED:
+		LCD_I2C_printStr(&hlcd3, "Calibrating...");
+		break;
+	case PWM_FAN_UNCONFIGURED:
+		LCD_I2C_printStr(&hlcd3, "Unconfigured");
+	case PWM_FAN_DIRECT:
+	case PWM_FAN_PCONTROL:
+	default:
+		LCD_I2C_printStr(&hlcd3, "!!! ERROR !!!");
+		break;
+	}
+
 }
 
 /* USER CODE END 4 */
