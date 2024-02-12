@@ -46,13 +46,13 @@ typedef struct {
 } PWM_Fan_HandleTypeDef;
 
 enum PWM_FAN_CTRL_MODE {
+	PWM_FAN_UNCONFIGURED,
 	PWM_FAN_DIRECT,
 	PWM_FAN_PCONTROL,
 	PWM_FAN_CALIBRATION_START,
 	PWM_FAN_CALIBRATION_START_LEVEL,
 	PWM_FAN_CALIBRATION_MIN_SPEED,
-	PWM_FAN_CALIBRATION_MAX_SPEED,
-	PWM_FAN_UNCONFIGURED
+	PWM_FAN_CALIBRATION_MAX_SPEED
 };
 
 void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
@@ -66,6 +66,6 @@ void pwm_fan_set_duty_cycle(PWM_Fan_HandleTypeDef *fan, float target_duty_cycle)
 float pwm_fan_set_duty_cycle_raw(PWM_Fan_HandleTypeDef *fan, uint16_t compare_register);
 float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan);
 float pwm_fan_update(PWM_Fan_HandleTypeDef *fan);
-_Bool pwm_fan_is_stopped(PWM_Fan_HandleTypeDef *fan);
+uint16_t pwm_fan_is_stopped(PWM_Fan_HandleTypeDef *fan);
 
 #endif //PWM_FAN_H

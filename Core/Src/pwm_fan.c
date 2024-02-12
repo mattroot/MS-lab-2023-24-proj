@@ -1,6 +1,9 @@
 #include "pwm_fan.h"
 #include "tim.h"
 
+
+uint32_t metric = 0;
+
 void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
 		TIM_HandleTypeDef *htim_pwm,
 		TIM_HandleTypeDef *htim_tacho,
@@ -80,7 +83,7 @@ void pwm_fan_set_duty_cycle(PWM_Fan_HandleTypeDef *fan, float duty_cycle) {
 	}
 	fan->target_duty_cycle = duty_cycle;
 	__HAL_TIM_SET_COMPARE(fan->htim_pwm, fan->pwm_channel,
-					fan->autoreload - (uint16_t)(fan->target_duty_cycle * fan->autoreload / 100));
+					(uint16_t)(fan->target_duty_cycle * fan->autoreload / 100));
 }
 
 float pwm_fan_set_duty_cycle_raw(PWM_Fan_HandleTypeDef *fan, uint16_t compare_register) {
@@ -101,9 +104,13 @@ float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan) {
 	uint32_t timeDiff = fan->current_read - fan->last_read;
 
 	// Calculate the speed of the fan
-	fan->current_speed =
+	/* fan->current_speed =
 				60.0 * HAL_RCC_GetPCLK1Freq() / (timeDiff * TACHO_PULSE_PER_REV
-				* (fan->tacho_prescaler+1) * (fan->tacho_autoreload+1));
+				* (fan->tacho_prescaler+1) * (fan->tacho_autoreload+1)); */
+
+	fan->current_speed =
+					60.0f * HAL_RCC_GetPCLK1Freq() * 2 / timeDiff / TACHO_PULSE_PER_REV;
+	// TODO: all ints, why no floats?
 
 	return fan->current_speed;
 }
@@ -111,6 +118,9 @@ float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan) {
 float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
      // Read TACHO input capture value to calculate current speed
 	switch(fan->mode) {
+	case PWM_FAN_DIRECT:
+		pwm_fan_set_duty_cycle(fan, fan->target_duty_cycle);
+		break;
 	case PWM_FAN_PCONTROL: {
 		// Calculate error
 		fan->ctrl_error = fan->target_speed - fan->current_speed;
@@ -128,11 +138,11 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 		}
 		break;
 	case PWM_FAN_CALIBRATION_START_LEVEL:
-		if(pwm_fan_is_stopped(fan) && fan->calibration_cycle_counter++ > PWM_FAN_CALIBRATION_FAIL_THRESHOLD) {
+		if(pwm_fan_is_stopped(fan) && (fan->calibration_cycle_counter++ > PWM_FAN_CALIBRATION_FAIL_THRESHOLD)) {
 			pwm_fan_set_duty_cycle(fan, fan->target_duty_cycle++);
 			fan->calibration_cycle_counter = 0;
 		}
-		else if (!pwm_fan_is_stopped(fan) && fan->calibration_cycle_counter > PWM_FAN_CALIBRATION_FAIL_THRESHOLD) {
+		else if (!pwm_fan_is_stopped(fan) && (fan->calibration_cycle_counter > PWM_FAN_CALIBRATION_FAIL_THRESHOLD)) {
 			fan->start_duty_cycle = fan->target_duty_cycle;
 			fan->calibration_cycle_counter = 0;
 			fan->mode = PWM_FAN_CALIBRATION_MIN_SPEED;
@@ -157,12 +167,13 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 		break;
 	}
 
-//	if(pwm_fan_is_stopped(fan)) fan->current_speed = 0.0f;
+	//if(pwm_fan_is_stopped(fan)) fan->current_speed = 0.0f;
     return fan->current_speed;
 }
 
-_Bool pwm_fan_is_stopped(PWM_Fan_HandleTypeDef *fan) {
-	uint16_t metric = __HAL_TIM_GET_COMPARE(fan->htim_tacho, fan->tacho_channel);
+uint16_t pwm_fan_is_stopped(PWM_Fan_HandleTypeDef *fan) {
+//	metric = __HAL_TIM_GET_COMPARE(fan->htim_tacho, fan->tacho_channel);
+	metric = 1;
 	if(metric - fan->current_read > TACHO_STOPPED_THRESHOLD) return 1;
 	return 0;
 }

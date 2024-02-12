@@ -131,24 +131,34 @@ int main(void)
 
   // initialize fans
   pwm_fan_init(&fan1, &htim3, &htim2, TIM_CHANNEL_1, TIM_CHANNEL_1);
+  //pwm_fan_schedule_calibration(&fan1);
   // manual calibration - fan 1
-  fan1.max_speed = 1400;
-  fan1.min_speed = 200;
-  fan1.start_duty_cycle = 5;
-  fan1.target_speed =  600;
-  fan1.ctrl_inertia = fan1.start_duty_cycle * (fan1.autoreload / 100);
-  fan1.ctrl_gain = (fan1.autoreload - fan1.ctrl_inertia) / (fan1.max_speed - fan1.min_speed);
-  fan1.mode = PWM_FAN_PCONTROL;
+//  fan1.max_speed = 1400;
+//  fan1.min_speed = 200;
+//  fan1.start_duty_cycle = 5;
+//  fan1.target_speed =  600;
+//  fan1.ctrl_inertia = fan1.start_duty_cycle * (fan1.autoreload / 100);
+//  fan1.ctrl_gain = (fan1.autoreload - fan1.ctrl_inertia) / (fan1.max_speed - fan1.min_speed);
+//  fan1.mode = PWM_FAN_PCONTROL;
+
+  // hard set duty cycle - fan 1
+  fan1.target_duty_cycle = 75.0f;
+  fan1.mode = PWM_FAN_DIRECT;
 
   pwm_fan_init(&fan2, &htim4, &htim2, TIM_CHANNEL_1, TIM_CHANNEL_3);
+  //pwm_fan_schedule_calibration(&fan2);
   // manual calibration - fan 2
-  fan2.max_speed = 3000;
-  fan2.min_speed = 200;
-  fan2.start_duty_cycle = 5;
-  fan2.target_speed =  1200;
-  fan2.ctrl_inertia = fan2.start_duty_cycle * (fan2.autoreload / 100);
-  fan2.ctrl_gain = (fan2.autoreload - fan2.ctrl_inertia) / (fan2.max_speed - fan2.min_speed);
-  fan2.mode = PWM_FAN_PCONTROL;
+//  fan2.max_speed = 3000;
+//  fan2.min_speed = 200;
+//  fan2.start_duty_cycle = 5;
+//  fan2.target_speed =  1200;
+//  fan2.ctrl_inertia = fan2.start_duty_cycle * (fan2.autoreload / 100);
+//  fan2.ctrl_gain = (fan2.autoreload - fan2.ctrl_inertia) / (fan2.max_speed - fan2.min_speed);
+//  fan2.mode = PWM_FAN_PCONTROL;
+
+  // hard set duty cycle - fan 2
+    fan2.target_duty_cycle = 12.0f;
+    fan2.mode = PWM_FAN_DIRECT;
 
   // Start serial output timer
   HAL_TIM_PWM_Start_IT(&htim5, TIM_CHANNEL_1);
@@ -229,9 +239,12 @@ void SystemClock_Config(void)
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	// This is pure insanity, don't you ever dare do it like this
 	if(htim->Instance == TIM2) {
-		if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
+		if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+			//HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 			pwm_fan_update_speed(&fan1);
+		}
 		if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)
+			//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 			pwm_fan_update_speed(&fan2);
 	}
 }
@@ -270,14 +283,28 @@ void update_display() {
 	LCD_I2C_SetCursor(&hlcd3, 1, 5);
 	switch(fan1.mode) {
 	case PWM_FAN_CALIBRATION_START:
-	case PWM_FAN_CALIBRATION_MIN_SPEED:
-	case PWM_FAN_CALIBRATION_MAX_SPEED:
 		LCD_I2C_printStr(&hlcd3, "Calibrating...");
+		break;
+	case PWM_FAN_CALIBRATION_START_LEVEL:
+		LCD_I2C_printStr(&hlcd3, "Calibrating...1");
+		break;
+	case PWM_FAN_CALIBRATION_MIN_SPEED:
+		LCD_I2C_printStr(&hlcd3, "Calibrating...2");
+		break;
+	case PWM_FAN_CALIBRATION_MAX_SPEED:
+		LCD_I2C_printStr(&hlcd3, "Calibrating...3");
 		break;
 	case PWM_FAN_UNCONFIGURED:
 		LCD_I2C_printStr(&hlcd3, "Unconfigured");
+		break;
 	case PWM_FAN_DIRECT:
+		LCD_I2C_printf(&hlcd3, "%u Manu %u",
+				(uint16_t) fan1.current_speed,
+				(uint16_t) fan1.target_duty_cycle);
+		break;
 	case PWM_FAN_PCONTROL:
+		LCD_I2C_printStr(&hlcd3, "Trgt");
+		break;
 	default:
 		LCD_I2C_printStr(&hlcd3, "!!! ERROR !!!");
 		break;
@@ -287,14 +314,28 @@ void update_display() {
 	LCD_I2C_SetCursor(&hlcd3, 2, 5);
 	switch(fan2.mode) {
 	case PWM_FAN_CALIBRATION_START:
-	case PWM_FAN_CALIBRATION_MIN_SPEED:
-	case PWM_FAN_CALIBRATION_MAX_SPEED:
 		LCD_I2C_printStr(&hlcd3, "Calibrating...");
+		break;
+	case PWM_FAN_CALIBRATION_START_LEVEL:
+		LCD_I2C_printStr(&hlcd3, "Calibrating...1");
+		break;
+	case PWM_FAN_CALIBRATION_MIN_SPEED:
+		LCD_I2C_printStr(&hlcd3, "Calibrating...2");
+		break;
+	case PWM_FAN_CALIBRATION_MAX_SPEED:
+		LCD_I2C_printStr(&hlcd3, "Calibrating...3");
 		break;
 	case PWM_FAN_UNCONFIGURED:
 		LCD_I2C_printStr(&hlcd3, "Unconfigured");
+		break;
 	case PWM_FAN_DIRECT:
+		LCD_I2C_printf(&hlcd3, "%u Manu %u",
+						(uint16_t) fan2.current_speed,
+						(uint16_t) fan2.target_duty_cycle);
+		break;
 	case PWM_FAN_PCONTROL:
+		LCD_I2C_printStr(&hlcd3, "Trgt");
+		break;
 	default:
 		LCD_I2C_printStr(&hlcd3, "!!! ERROR !!!");
 		break;
@@ -341,6 +382,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+
   __disable_irq();
   while (1)
   {
