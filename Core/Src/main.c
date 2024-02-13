@@ -115,11 +115,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   // initialize I2C display
-  // workaround: run the init a few times to make sure the display is empty
-  for(int i = 0; i <= 3; i++) {
-	  LCD_I2C_Init(&hlcd3);
-	  HAL_Delay(500);
-  }
+  LCD_I2C_Init(&hlcd3);
   prepare_display();
 
 
@@ -283,7 +279,7 @@ void update_display() {
 	LCD_I2C_SetCursor(&hlcd3, 1, 5);
 	switch(fan1.mode) {
 	case PWM_FAN_CALIBRATION_START:
-		LCD_I2C_printStr(&hlcd3, "Calibrating...");
+		LCD_I2C_printStr(&hlcd3, "Calibrating... ");
 		break;
 	case PWM_FAN_CALIBRATION_START_LEVEL:
 		LCD_I2C_printStr(&hlcd3, "Calibrating...1");
@@ -295,18 +291,21 @@ void update_display() {
 		LCD_I2C_printStr(&hlcd3, "Calibrating...3");
 		break;
 	case PWM_FAN_UNCONFIGURED:
-		LCD_I2C_printStr(&hlcd3, "Unconfigured");
+		LCD_I2C_printStr(&hlcd3, "Unconfigured   ");
 		break;
 	case PWM_FAN_DIRECT:
-		LCD_I2C_printf(&hlcd3, "%u Manu %u",
+		LCD_I2C_printf(&hlcd3, "%u Manu %u%%",
 				(uint16_t) fan1.current_speed,
 				(uint16_t) fan1.target_duty_cycle);
 		break;
 	case PWM_FAN_PCONTROL:
-		LCD_I2C_printStr(&hlcd3, "Trgt");
+		LCD_I2C_printf(&hlcd3, "%u %u %u%%",
+				(uint16_t) fan1.current_speed,
+				(uint16_t) fan1.target_speed,
+				(uint16_t) fan1.target_duty_cycle);
 		break;
 	default:
-		LCD_I2C_printStr(&hlcd3, "!!! ERROR !!!");
+		LCD_I2C_printStr(&hlcd3, " !!! ERROR !!! ");
 		break;
 	}
 
@@ -329,12 +328,15 @@ void update_display() {
 		LCD_I2C_printStr(&hlcd3, "Unconfigured");
 		break;
 	case PWM_FAN_DIRECT:
-		LCD_I2C_printf(&hlcd3, "%u Manu %u",
-						(uint16_t) fan2.current_speed,
-						(uint16_t) fan2.target_duty_cycle);
+		LCD_I2C_printf(&hlcd3, "%u Manu %u%%",
+				(uint16_t) fan2.current_speed,
+				(uint16_t) fan2.target_duty_cycle);
 		break;
 	case PWM_FAN_PCONTROL:
-		LCD_I2C_printStr(&hlcd3, "Trgt");
+		LCD_I2C_printf(&hlcd3, "%u %u %u%%",
+				(uint16_t) fan2.current_speed,
+				(uint16_t) fan2.target_speed,
+				(uint16_t) fan2.target_duty_cycle);
 		break;
 	default:
 		LCD_I2C_printStr(&hlcd3, "!!! ERROR !!!");
