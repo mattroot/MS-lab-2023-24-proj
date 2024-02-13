@@ -142,7 +142,7 @@ int main(void)
 //  fan1.mode = PWM_FAN_PCONTROL;
 
   // hard set duty cycle - fan 1
-  fan1.target_duty_cycle = 75.0f;
+  fan1.target_duty_cycle = 100.0f;
   fan1.mode = PWM_FAN_DIRECT;
 
   pwm_fan_init(&fan2, &htim4, &htim2, TIM_CHANNEL_1, TIM_CHANNEL_3);
@@ -157,7 +157,7 @@ int main(void)
 //  fan2.mode = PWM_FAN_PCONTROL;
 
   // hard set duty cycle - fan 2
-    fan2.target_duty_cycle = 12.0f;
+    fan2.target_duty_cycle = 100.0f;
     fan2.mode = PWM_FAN_DIRECT;
 
   // Start serial output timer

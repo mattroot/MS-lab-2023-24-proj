@@ -16,10 +16,10 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
     fan->tacho_channel = tacho_channel;
 
     // constant registers for easy access
-    fan->autoreload = __HAL_TIM_GET_AUTORELOAD(htim_pwm);
-    fan->prescaler = __HAL_TIM_GET_ICPRESCALER(htim_pwm, pwm_channel);
-    fan->tacho_autoreload = __HAL_TIM_GET_AUTORELOAD(htim_tacho);
-    fan->tacho_prescaler = __HAL_TIM_GET_ICPRESCALER(htim_tacho, tacho_channel);
+    fan->autoreload = htim_pwm->Instance->ARR;
+    fan->prescaler = htim_pwm->Instance->PSC;
+    fan->tacho_autoreload = htim_tacho->Instance->ARR;
+    fan->tacho_prescaler = htim_tacho->Instance->PSC;
 
     // fan characteristics
     fan->max_speed = 0;
@@ -98,7 +98,7 @@ float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan) {
 	// Save the last capture time
 	fan->last_read = fan->current_read;
 	// Read the current capture time
-	fan->current_read = __HAL_TIM_GET_COMPARE(fan->htim_tacho, fan->tacho_channel);
+	fan->current_read = __HAL_TIM_GET_COUNTER(fan->htim_tacho);
 
 	// Calculate the time between the falling edges
 	uint32_t timeDiff = fan->current_read - fan->last_read;
@@ -108,9 +108,11 @@ float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan) {
 				60.0 * HAL_RCC_GetPCLK1Freq() / (timeDiff * TACHO_PULSE_PER_REV
 				* (fan->tacho_prescaler+1) * (fan->tacho_autoreload+1)); */
 
+	// NOTE: this is extremely specific for STM32F767ZITx timers @ APB1
+	// TODO: why still unreliable
 	fan->current_speed =
-					60.0f * HAL_RCC_GetPCLK1Freq() * 2 / timeDiff / TACHO_PULSE_PER_REV;
-	// TODO: all ints, why no floats?
+					60.0f * (float)HAL_RCC_GetPCLK1Freq() * 2.0f
+					/ (float)timeDiff / (float)(fan->tacho_prescaler+1) / TACHO_PULSE_PER_REV;
 
 	return fan->current_speed;
 }
@@ -167,13 +169,17 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 		break;
 	}
 
-	//if(pwm_fan_is_stopped(fan)) fan->current_speed = 0.0f;
+	if(fan->mode != PWM_FAN_UNCONFIGURED) {
+		if(pwm_fan_is_stopped(fan)) fan->current_speed = 0.0f;
+	} else {
+		fan->current_speed = 0.0f;
+	}
     return fan->current_speed;
 }
 
 uint16_t pwm_fan_is_stopped(PWM_Fan_HandleTypeDef *fan) {
 //	metric = __HAL_TIM_GET_COMPARE(fan->htim_tacho, fan->tacho_channel);
-	metric = 1;
+	metric = fan->htim_tacho->Instance->CNT;
 	if(metric - fan->current_read > TACHO_STOPPED_THRESHOLD) return 1;
 	return 0;
 }
