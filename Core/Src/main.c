@@ -27,10 +27,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bmp280.h"
 #include "lcd.h"
 #include "lcd_config.h"
 #include "pwm_fan.h"
-#include "temp_sensor.h"
 #include "serial.h"
 #include "strhelp.h"
 
