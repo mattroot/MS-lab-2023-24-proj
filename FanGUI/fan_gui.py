@@ -4,7 +4,7 @@ import tkinter.ttk as ttk
 # set up master
 t = tk.Tk()
 t.title("F767ZI-FanControl - Control panel")
-t.geometry("350x320")
+t.geometry("350x380")
 t.resizable(0, 0)
 # josh.
 t.grid_columnconfigure(0, weight=1, uniform="josh")
@@ -55,7 +55,11 @@ fan1_ctrl_radio_pcontrol = ttk.Radiobutton(fan1_ctrl_labelframe, text="P-Control
 fan1_ctrl_speed_scale = ttk.Scale(fan1_ctrl_labelframe, from_=0, to=1000, orient="horizontal")
 fan1_ctrl_value_label = tk.Label(fan1_ctrl_labelframe, text="2137 RPM", anchor="center")
 fan1_ctrl_apply_button = ttk.Button(fan1_ctrl_labelframe, text="Apply")
-fan1_ctrl_calibrate_button = ttk.Button(fan1_ctrl_labelframe, text="Calibrate")
+
+fan1_calib_labelframe = ttk.LabelFrame(fan1_panel, text="Calibration")
+fan1_calib_button = ttk.Button(fan1_calib_labelframe, text="Calibrate")
+fan1_calib_min = tk.Label(fan1_calib_labelframe, text="Min. speed: 600 RPM")
+fan1_calib_max = tk.Label(fan1_calib_labelframe, text="Max. speed: 2000 RPM")
 
 fan1_label.grid(column=0, row=0, columnspan=2,sticky="nsew")
 fan1_speed_label.grid(column=0, row=1, sticky="nsew")
@@ -69,7 +73,11 @@ fan1_ctrl_radio_pcontrol.pack(side="top")
 fan1_ctrl_speed_scale.pack(side="top")
 fan1_ctrl_value_label.pack(side="top")
 fan1_ctrl_apply_button.pack(side="top")
-fan1_ctrl_calibrate_button.pack(side="top")
+
+fan1_calib_labelframe.grid(column=0, row=4, columnspan=2, sticky="nsew")
+fan1_calib_button.pack(side="top")
+fan1_calib_min.pack(side="top")
+fan1_calib_max.pack(side="top")
 
 ## END Panel 3 - Fan 1
 
@@ -89,7 +97,11 @@ fan2_ctrl_radio_pcontrol = ttk.Radiobutton(fan2_ctrl_labelframe, text="P-Control
 fan2_ctrl_speed_scale = ttk.Scale(fan2_ctrl_labelframe, from_=0, to=1000, orient="horizontal")
 fan2_ctrl_value_label = tk.Label(fan2_ctrl_labelframe, text="2137 RPM", anchor="center")
 fan2_ctrl_apply_button = ttk.Button(fan2_ctrl_labelframe, text="Apply")
-fan2_ctrl_calibrate_button = ttk.Button(fan2_ctrl_labelframe, text="Calibrate")
+
+fan2_calib_labelframe = ttk.LabelFrame(fan2_panel, text="Calibration")
+fan2_calib_button = ttk.Button(fan2_calib_labelframe, text="Calibrate")
+fan2_calib_min = tk.Label(fan2_calib_labelframe, text="Min. speed: 600 RPM")
+fan2_calib_max = tk.Label(fan2_calib_labelframe, text="Max. speed: 2000 RPM")
 
 fan2_label.grid(column=0, row=0, columnspan=2,sticky="nsew")
 fan2_speed_label.grid(column=0, row=1, sticky="nsew")
@@ -103,7 +115,11 @@ fan2_ctrl_radio_pcontrol.pack(side="top")
 fan2_ctrl_speed_scale.pack(side="top")
 fan2_ctrl_value_label.pack(side="top")
 fan2_ctrl_apply_button.pack(side="top")
-fan2_ctrl_calibrate_button.pack(side="top")
+
+fan2_calib_labelframe.grid(column=0, row=4, columnspan=2, sticky="nsew")
+fan2_calib_button.pack(side="top")
+fan2_calib_min.pack(side="top")
+fan2_calib_max.pack(side="top")
 ## END Panel 4 - Fan 2
 
 t.mainloop()
