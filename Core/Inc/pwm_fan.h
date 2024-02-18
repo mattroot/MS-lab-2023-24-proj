@@ -20,7 +20,6 @@ typedef struct {
     // fan characteristics
     float max_speed;
     float min_speed;
-    float start_duty_cycle;
 
     // fan speed control
     float target_duty_cycle;
@@ -36,8 +35,7 @@ typedef struct {
     uint32_t current_read;
 
     // calibration helpers
-    uint16_t calibration_halt_counter;
-    uint16_t calibration_cycle_counter;
+    uint32_t calibration_cycle_counter;
 
     // controller settings
     float ctrl_gain;
@@ -46,13 +44,13 @@ typedef struct {
 } PWM_Fan_HandleTypeDef;
 
 enum PWM_FAN_CTRL_MODE {
-	PWM_FAN_UNCONFIGURED,
-	PWM_FAN_DIRECT,
-	PWM_FAN_PCONTROL,
-	PWM_FAN_CALIBRATION_START,
-	PWM_FAN_CALIBRATION_START_LEVEL,
-	PWM_FAN_CALIBRATION_MIN_SPEED,
-	PWM_FAN_CALIBRATION_MAX_SPEED
+	PWM_FAN_UNCONFIGURED = 0,
+	PWM_FAN_DIRECT  = 1,
+	PWM_FAN_PCONTROL = 2,
+	PWM_FAN_CALIBRATION_START = 3,
+	// PWM_FAN_CALIBRATION_START_LEVEL = 4,
+	PWM_FAN_CALIBRATION_MIN_SPEED = 5,
+	PWM_FAN_CALIBRATION_MAX_SPEED = 6
 };
 
 void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,

@@ -107,7 +107,6 @@ int main(void)
   MX_I2C1_Init();
   MX_USART3_UART_Init();
   MX_TIM3_Init();
-  MX_TIM4_Init();
   MX_TIM5_Init();
   MX_TIM2_Init();
   MX_CRC_Init();
@@ -122,12 +121,11 @@ int main(void)
   // start all the timers
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_Base_Start_IT(&htim3);
-  HAL_TIM_Base_Start_IT(&htim4);
   HAL_TIM_Base_Start_IT(&htim5);
 
   // initialize fans
   pwm_fan_init(&fan1, &htim3, &htim2, TIM_CHANNEL_1, TIM_CHANNEL_1);
-  //pwm_fan_schedule_calibration(&fan1);
+  pwm_fan_schedule_calibration(&fan1);
   // manual calibration - fan 1
 //  fan1.max_speed = 1400;
 //  fan1.min_speed = 200;
@@ -138,11 +136,12 @@ int main(void)
 //  fan1.mode = PWM_FAN_PCONTROL;
 
   // hard set duty cycle - fan 1
-  fan1.target_duty_cycle = 30.0f;
-  fan1.mode = PWM_FAN_DIRECT;
+//  fan1.target_duty_cycle = 1.0f;
+//  pwm_fan_set_duty_cycle(&fan1, 1.0f);
+//  fan1.mode = PWM_FAN_DIRECT;
 
-  pwm_fan_init(&fan2, &htim4, &htim2, TIM_CHANNEL_1, TIM_CHANNEL_3);
-  //pwm_fan_schedule_calibration(&fan2);
+  pwm_fan_init(&fan2, &htim3, &htim2, TIM_CHANNEL_2, TIM_CHANNEL_3);
+  pwm_fan_schedule_calibration(&fan2);
   // manual calibration - fan 2
 //  fan2.max_speed = 3000;
 //  fan2.min_speed = 200;
@@ -153,8 +152,9 @@ int main(void)
 //  fan2.mode = PWM_FAN_PCONTROL;
 
   // hard set duty cycle - fan 2
-    fan2.target_duty_cycle = 30.0f;
-    fan2.mode = PWM_FAN_DIRECT;
+//    fan2.target_duty_cycle = 5.0f;
+//    pwm_fan_set_duty_cycle(&fan2, 5.0f);
+//    fan2.mode = PWM_FAN_DIRECT;
 
   // Start serial output timer
   HAL_TIM_PWM_Start_IT(&htim5, TIM_CHANNEL_1);
@@ -281,9 +281,9 @@ void update_display() {
 	case PWM_FAN_CALIBRATION_START:
 		LCD_I2C_printStr(&hlcd3, "Calibrating... ");
 		break;
-	case PWM_FAN_CALIBRATION_START_LEVEL:
-		LCD_I2C_printStr(&hlcd3, "Calibrating...1");
-		break;
+//	case PWM_FAN_CALIBRATION_START_LEVEL:
+//		LCD_I2C_printStr(&hlcd3, "Calibrating...1");
+//		break;
 	case PWM_FAN_CALIBRATION_MIN_SPEED:
 		LCD_I2C_printStr(&hlcd3, "Calibrating...2");
 		break;
@@ -315,9 +315,9 @@ void update_display() {
 	case PWM_FAN_CALIBRATION_START:
 		LCD_I2C_printStr(&hlcd3, "Calibrating...");
 		break;
-	case PWM_FAN_CALIBRATION_START_LEVEL:
-		LCD_I2C_printStr(&hlcd3, "Calibrating...1");
-		break;
+//	case PWM_FAN_CALIBRATION_START_LEVEL:
+//		LCD_I2C_printStr(&hlcd3, "Calibrating...1");
+//		break;
 	case PWM_FAN_CALIBRATION_MIN_SPEED:
 		LCD_I2C_printStr(&hlcd3, "Calibrating...2");
 		break;
@@ -361,9 +361,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 	if (htim->Instance == TIM3) {
 	    fan1_speed = pwm_fan_update(&fan1);
-
-	  }
-	if (htim->Instance == TIM4) {
 	    fan2_speed = pwm_fan_update(&fan2);
 	  }
 

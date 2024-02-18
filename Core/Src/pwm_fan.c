@@ -24,7 +24,6 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
     // fan characteristics
     fan->max_speed = 0;
     fan->min_speed = 0;
-    fan->start_duty_cycle = 5;
 
 	// fan speed control
 	fan->target_duty_cycle = 0.0f;
@@ -40,7 +39,6 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
 	fan->current_read = 0;
 
 	// calibration helpers
-	fan->calibration_halt_counter = 0;
 	fan->calibration_cycle_counter = 0;
 
 	// controller settings
@@ -58,7 +56,6 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
 }
 
 void pwm_fan_schedule_calibration(PWM_Fan_HandleTypeDef *fan) {
-	fan->calibration_halt_counter = 0;
 	fan->calibration_cycle_counter = 0;
 	fan->mode = PWM_FAN_CALIBRATION_START;
 }
@@ -120,9 +117,9 @@ float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan) {
 float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
      // Read TACHO input capture value to calculate current speed
 	switch(fan->mode) {
-	case PWM_FAN_DIRECT:
-		pwm_fan_set_duty_cycle(fan, fan->target_duty_cycle);
-		break;
+//	case PWM_FAN_DIRECT:
+//		pwm_fan_set_duty_cycle(fan, fan->target_duty_cycle);
+//		break;
 	case PWM_FAN_PCONTROL: {
 		// Calculate error
 		fan->ctrl_error = fan->target_speed - fan->current_speed;
@@ -133,32 +130,25 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 		break;
 	}
 	case PWM_FAN_CALIBRATION_START:
-		pwm_fan_set_duty_cycle(fan, 0);
-		if(fan->calibration_cycle_counter++ > PWM_FAN_CALIBRATION_START_INERTIA) {
-			fan->calibration_cycle_counter = 0;
-			fan->mode = PWM_FAN_CALIBRATION_START_LEVEL;
-		}
-		break;
-	case PWM_FAN_CALIBRATION_START_LEVEL:
-		if(pwm_fan_is_stopped(fan) && (fan->calibration_cycle_counter++ > PWM_FAN_CALIBRATION_FAIL_THRESHOLD)) {
-			pwm_fan_set_duty_cycle(fan, fan->target_duty_cycle++);
-			fan->calibration_cycle_counter = 0;
-		}
-		else if (!pwm_fan_is_stopped(fan) && (fan->calibration_cycle_counter > PWM_FAN_CALIBRATION_FAIL_THRESHOLD)) {
-			fan->start_duty_cycle = fan->target_duty_cycle;
+		pwm_fan_set_duty_cycle(fan, 30.0f);
+		if(fan->calibration_cycle_counter++ > PWM_FAN_CALIBRATION_PERIOD) {
 			fan->calibration_cycle_counter = 0;
 			fan->mode = PWM_FAN_CALIBRATION_MIN_SPEED;
 		}
 		break;
 	case PWM_FAN_CALIBRATION_MIN_SPEED:
-		if(fan->calibration_cycle_counter++ > PWM_FAN_CALIBRATION_PERIOD) {
+		fan->calibration_cycle_counter++;
+		if(fan->calibration_cycle_counter > PWM_FAN_CALIBRATION_PERIOD) {
+			fan->min_speed = fan->current_speed;
 			fan->calibration_cycle_counter = 0;
 			fan->mode = PWM_FAN_CALIBRATION_MAX_SPEED;
 			pwm_fan_set_duty_cycle(fan, 100);
 		}
 		break;
 	case PWM_FAN_CALIBRATION_MAX_SPEED:
-		if(fan->calibration_cycle_counter++ > PWM_FAN_CALIBRATION_PERIOD) {
+		fan->calibration_cycle_counter++;
+		if(fan->calibration_cycle_counter > PWM_FAN_CALIBRATION_PERIOD) {
+			fan->max_speed = fan->current_speed;
 			fan->calibration_cycle_counter = 0;
 			fan->mode = PWM_FAN_DIRECT;
 			// set to safe 50% after calibration
