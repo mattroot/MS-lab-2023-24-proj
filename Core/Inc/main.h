@@ -28,6 +28,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal.h"
+#include "pwm_fan.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -53,9 +54,11 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+void grab_bmp_measurement();
 void uart_post_sensors();
 void prepare_display();
 void update_display();
+void generate_fan_display_line(char *str, PWM_Fan_HandleTypeDef *fan);
 
 /* USER CODE END EFP */
 

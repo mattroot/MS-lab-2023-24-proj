@@ -65,5 +65,6 @@ float pwm_fan_set_duty_cycle_raw(PWM_Fan_HandleTypeDef *fan, uint16_t compare_re
 float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan);
 float pwm_fan_update(PWM_Fan_HandleTypeDef *fan);
 uint16_t pwm_fan_is_stopped(PWM_Fan_HandleTypeDef *fan);
+void pwm_fan_generate_display(PWM_Fan_HandleTypeDef *fan, char *str, uint16_t strlen);
 
 #endif //PWM_FAN_H

@@ -168,9 +168,11 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 }
 
 uint16_t pwm_fan_is_stopped(PWM_Fan_HandleTypeDef *fan) {
-//	metric = __HAL_TIM_GET_COMPARE(fan->htim_tacho, fan->tacho_channel);
 	metric = fan->htim_tacho->Instance->CNT;
 	if(metric - fan->current_read > TACHO_STOPPED_THRESHOLD) return 1;
 	return 0;
 }
 
+void pwm_fan_generate_display(PWM_Fan_HandleTypeDef *fan, char *str, uint16_t strlen) {
+
+}

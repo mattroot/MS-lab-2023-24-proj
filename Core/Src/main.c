@@ -55,13 +55,14 @@
 
 /* USER CODE BEGIN PV */
 
-
 // I'm going nuts
 PWM_Fan_HandleTypeDef fan1;
 PWM_Fan_HandleTypeDef fan2;
+BMP280_HandleTypedef bmp;
 
-uint16_t fan1_speed=0;
-uint16_t fan2_speed=0;
+uint16_t fan1_speed  = 0;
+uint16_t fan2_speed  = 0;
+float temperature = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -113,48 +114,27 @@ int main(void)
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
-  // initialize I2C display
-  LCD_I2C_Init(&hlcd3);
-  prepare_display();
-
-
   // start all the timers
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_TIM_Base_Start_IT(&htim5);
 
+  // initialize I2C display
+  LCD_I2C_Init(&hlcd3);
+  prepare_display();
+
+  // Initialize BMP280 sensor
+  bmp280_init_default_params(&bmp.params);
+  bmp.addr = BMP280_I2C_ADDRESS_0;
+  bmp.i2c = &hi2c1;
+  bmp280_init(&bmp, &bmp.params);
+
   // initialize fans
   pwm_fan_init(&fan1, &htim3, &htim2, TIM_CHANNEL_1, TIM_CHANNEL_1);
   pwm_fan_schedule_calibration(&fan1);
-  // manual calibration - fan 1
-//  fan1.max_speed = 1400;
-//  fan1.min_speed = 200;
-//  fan1.start_duty_cycle = 5;
-//  fan1.target_speed =  600;
-//  fan1.ctrl_inertia = fan1.start_duty_cycle * (fan1.autoreload / 100);
-//  fan1.ctrl_gain = (fan1.autoreload - fan1.ctrl_inertia) / (fan1.max_speed - fan1.min_speed);
-//  fan1.mode = PWM_FAN_PCONTROL;
-
-  // hard set duty cycle - fan 1
-//  fan1.target_duty_cycle = 1.0f;
-//  pwm_fan_set_duty_cycle(&fan1, 1.0f);
-//  fan1.mode = PWM_FAN_DIRECT;
 
   pwm_fan_init(&fan2, &htim3, &htim2, TIM_CHANNEL_2, TIM_CHANNEL_3);
   pwm_fan_schedule_calibration(&fan2);
-  // manual calibration - fan 2
-//  fan2.max_speed = 3000;
-//  fan2.min_speed = 200;
-//  fan2.start_duty_cycle = 5;
-//  fan2.target_speed =  1200;
-//  fan2.ctrl_inertia = fan2.start_duty_cycle * (fan2.autoreload / 100);
-//  fan2.ctrl_gain = (fan2.autoreload - fan2.ctrl_inertia) / (fan2.max_speed - fan2.min_speed);
-//  fan2.mode = PWM_FAN_PCONTROL;
-
-  // hard set duty cycle - fan 2
-//    fan2.target_duty_cycle = 5.0f;
-//    pwm_fan_set_duty_cycle(&fan2, 5.0f);
-//    fan2.mode = PWM_FAN_DIRECT;
 
   // Start serial output timer
   HAL_TIM_PWM_Start_IT(&htim5, TIM_CHANNEL_1);
@@ -245,6 +225,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	}
 }
 
+void grab_bmp_measurement() {
+	bmp280_read_float(&bmp, &temperature, NULL, NULL);
+}
+
 void uart_post_sensors() {
 	char buffer[100] = "";
 	sprintf(buffer, "fan1,%f,%f,%f,%u\r\n",
@@ -261,6 +245,9 @@ void uart_post_sensors() {
 			fan2.target_speed,
 			(uint16_t)fan2.mode
 			);
+	HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 100);
+
+	sprintf(buffer, "temp,%f\r\n", temperature);
 	HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 100);
 }
 
@@ -343,6 +330,52 @@ void update_display() {
 		break;
 	}
 
+	// BMP280
+	LCD_I2C_SetCursor(&hlcd3, 3, 5);
+	LCD_I2C_printf(&hlcd3, "%dC", (int) temperature);
+}
+
+void generate_fan_display_line(char *str, PWM_Fan_HandleTypeDef *fan) {
+	char* curr_speed_str[5], tgt_duty_str[5], tgt_speed_str[5];
+	switch(fan->mode) {
+		case PWM_FAN_CALIBRATION_START:
+			sprintf(str, "Calibrating... ");
+			break;
+		case PWM_FAN_CALIBRATION_MIN_SPEED:
+			sprintf(str, "Calibrating...2");
+			break;
+		case PWM_FAN_CALIBRATION_MAX_SPEED:
+			sprintf(str, "Calibrating...3");
+			break;
+		case PWM_FAN_UNCONFIGURED:
+			sprintf(str, "Unconfigured   ");
+			break;
+		case PWM_FAN_DIRECT:
+			sprintf(curr_speed_str, "%u", (uint16_t) fan->current_speed);
+			strpad(curr_speed_str, ' ', 4);
+			sprintf(tgt_duty_str, "%u%%", (uint16_t) fan->target_duty_cycle);
+			strpad(tgt_duty_str, ' ', 4);
+			sprintf(str, "%s Manu %s",
+					curr_speed_str, tgt_duty_str);
+			break;
+		case PWM_FAN_PCONTROL:
+			sprintf(curr_speed_str, "%u", (uint16_t) fan->current_speed);
+			strpad(curr_speed_str, ' ', 4);
+			sprintf(tgt_speed_str, "%u", (uint16_t) fan->target_speed);
+			strpad(tgt_speed_str, ' ', 4);
+			sprintf(tgt_duty_str, "%u%%", (uint16_t) fan->target_duty_cycle);
+			strpad(tgt_duty_str, ' ', 4);
+			sprintf(str, "%u %u %u ",
+					curr_speed_str,
+					tgt_speed_str,
+					tgt_duty_str);
+			break;
+		default:
+			char error_str[15] = "!!! ERROR !!!";
+			strpad(error_str, ' ', 15);
+			LCD_I2C_printStr(&hlcd3, error_str);
+			break;
+		}
 }
 
 /* USER CODE END 4 */

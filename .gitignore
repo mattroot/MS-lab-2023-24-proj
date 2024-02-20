@@ -1,4 +1,8 @@
-.pio
-Debug
-Release
-
+/.pio
+/Debug
+/Release
+/.settings
+/.vscode
+*.elf
+/FanGUI/.vscode
+/FanGUI/.venv
