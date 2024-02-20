@@ -152,7 +152,7 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 
 			// set to 1000 RPM after calibration
 			fan->mode = PWM_FAN_PCONTROL;
-			pwm_fan_set(fan, 1000.0f);
+			pwm_fan_set(fan, 700.0f);
 		}
 		break;
 	default:
