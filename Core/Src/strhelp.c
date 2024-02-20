@@ -29,16 +29,17 @@ size_t strlen(const char *str)
   * @param  str_target_length : target length of string
   */
 void strpad(const char *str, char pad_chr, uint16_t str_target_length) {
-	size_t l = strlen(str);
+	char* string = str;
+	size_t l = strlen(string);
 	if(l > str_target_length) {
 		for(int i = 0; i < str_target_length; i++) {
-			str[i] = '?';
+			string[i] = '?';
 		}
 	}
 	else if(l < str_target_length) {
-		for(int i = l - 1; i < str_target_length; i++) {
-			str[i] = pad_chr;
+		for(int i = l; i < str_target_length; i++) {
+			string[i] = pad_chr;
 		}
 	}
-	str[str_target_length] = '\0';
+	string[str_target_length] = '\0';
 }

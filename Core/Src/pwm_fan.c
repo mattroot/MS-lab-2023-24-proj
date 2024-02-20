@@ -1,9 +1,6 @@
 #include "pwm_fan.h"
 #include "tim.h"
 
-
-uint32_t metric = 0;
-
 void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
 		TIM_HandleTypeDef *htim_pwm,
 		TIM_HandleTypeDef *htim_tacho,
@@ -40,23 +37,23 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
 
 	// calibration helpers
 	fan->calibration_cycle_counter = 0;
+	fan->calibration_min = 0;
+	fan->calibration_max = 0;
 
 	// controller settings
 	fan->ctrl_gain = 0;
-	fan->ctrl_inertia = 0;
 	fan->mode = PWM_FAN_UNCONFIGURED;
 
     // Initialize PWM
     HAL_TIM_PWM_Start_IT(fan->htim_pwm, fan->pwm_channel);
     // Initialize TACHO input capture
     HAL_TIM_IC_Start_IT(fan->htim_tacho, fan->tacho_channel);
-
-    // Put fan in calibration mode
-    // pwm_fan_schedule_calibration(fan);
 }
 
 void pwm_fan_schedule_calibration(PWM_Fan_HandleTypeDef *fan) {
 	fan->calibration_cycle_counter = 0;
+	fan->min_speed = 999999.0f;
+	fan->max_speed = 0.0f;
 	fan->mode = PWM_FAN_CALIBRATION_START;
 }
 
@@ -87,7 +84,7 @@ float pwm_fan_set_duty_cycle_raw(PWM_Fan_HandleTypeDef *fan, uint16_t compare_re
 	__HAL_TIM_SET_COMPARE(fan->htim_pwm, fan->pwm_channel, compare_register);
 
 	// return generic duty cycle value
-	fan->target_duty_cycle = (float)(fan->autoreload - compare_register) / (float)fan->autoreload * 100;
+	fan->target_duty_cycle = (float)(compare_register) / (float)fan->autoreload * 100;
 	return fan->target_duty_cycle;
 }
 
@@ -99,11 +96,6 @@ float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan) {
 
 	// Calculate the time between the falling edges
 	uint32_t timeDiff = fan->current_read - fan->last_read;
-
-	// Calculate the speed of the fan
-	/* fan->current_speed =
-				60.0 * HAL_RCC_GetPCLK1Freq() / (timeDiff * TACHO_PULSE_PER_REV
-				* (fan->tacho_prescaler+1) * (fan->tacho_autoreload+1)); */
 
 	// NOTE: this is extremely specific for STM32F767ZITx timers @ APB1
 	// TODO: why still unreliable
@@ -124,9 +116,9 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 		// Calculate error
 		fan->ctrl_error = fan->target_speed - fan->current_speed;
 		// Calculate PWM duty cycle
-		uint16_t pwm_value = (fan->ctrl_gain * fan->target_speed) + fan->ctrl_inertia;
+		uint16_t pwm_value = fan->ctrl_gain * fan->target_speed;
 		// Set PWM duty cycle
-		fan->target_duty_cycle = pwm_fan_set_duty_cycle_raw(fan, pwm_value);
+		pwm_fan_set_duty_cycle_raw(fan, pwm_value);
 		break;
 	}
 	case PWM_FAN_CALIBRATION_START:
@@ -141,8 +133,14 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 		if(fan->calibration_cycle_counter > PWM_FAN_CALIBRATION_PERIOD) {
 			fan->min_speed = fan->current_speed;
 			fan->calibration_cycle_counter = 0;
+			fan->mode = PWM_FAN_CALIBRATION_MAX_START;
+		}
+		break;
+	case PWM_FAN_CALIBRATION_MAX_START:
+		pwm_fan_set_duty_cycle(fan, 100.0f);
+		if(fan->calibration_cycle_counter++ > PWM_FAN_CALIBRATION_PERIOD) {
+			fan->calibration_cycle_counter = 0;
 			fan->mode = PWM_FAN_CALIBRATION_MAX_SPEED;
-			pwm_fan_set_duty_cycle(fan, 100);
 		}
 		break;
 	case PWM_FAN_CALIBRATION_MAX_SPEED:
@@ -150,9 +148,11 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 		if(fan->calibration_cycle_counter > PWM_FAN_CALIBRATION_PERIOD) {
 			fan->max_speed = fan->current_speed;
 			fan->calibration_cycle_counter = 0;
-			fan->mode = PWM_FAN_DIRECT;
-			// set to safe 50% after calibration
-			pwm_fan_set_duty_cycle(fan, 50);
+			fan->ctrl_gain = (float) fan->autoreload / fan->max_speed;
+
+			// set to 1000 RPM after calibration
+			fan->mode = PWM_FAN_PCONTROL;
+			pwm_fan_set(fan, 1000.0f);
 		}
 		break;
 	default:
@@ -168,11 +168,8 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 }
 
 uint16_t pwm_fan_is_stopped(PWM_Fan_HandleTypeDef *fan) {
-	metric = fan->htim_tacho->Instance->CNT;
+	uint32_t metric = fan->htim_tacho->Instance->CNT;
 	if(metric - fan->current_read > TACHO_STOPPED_THRESHOLD) return 1;
 	return 0;
 }
 
-void pwm_fan_generate_display(PWM_Fan_HandleTypeDef *fan, char *str, uint16_t strlen) {
-
-}

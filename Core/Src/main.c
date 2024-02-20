@@ -68,7 +68,7 @@ float temperature = 0;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+void generate_fan_display_line(char *str, PWM_Fan_HandleTypeDef *fan);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -262,118 +262,65 @@ void prepare_display() {
 }
 
 void update_display() {
+
+	// display str buffer
+	char disp[15];
+
 	// fan 1
 	LCD_I2C_SetCursor(&hlcd3, 1, 5);
-	switch(fan1.mode) {
-	case PWM_FAN_CALIBRATION_START:
-		LCD_I2C_printStr(&hlcd3, "Calibrating... ");
-		break;
-//	case PWM_FAN_CALIBRATION_START_LEVEL:
-//		LCD_I2C_printStr(&hlcd3, "Calibrating...1");
-//		break;
-	case PWM_FAN_CALIBRATION_MIN_SPEED:
-		LCD_I2C_printStr(&hlcd3, "Calibrating...2");
-		break;
-	case PWM_FAN_CALIBRATION_MAX_SPEED:
-		LCD_I2C_printStr(&hlcd3, "Calibrating...3");
-		break;
-	case PWM_FAN_UNCONFIGURED:
-		LCD_I2C_printStr(&hlcd3, "Unconfigured   ");
-		break;
-	case PWM_FAN_DIRECT:
-		LCD_I2C_printf(&hlcd3, "%u Manu %u%%",
-				(uint16_t) fan1.current_speed,
-				(uint16_t) fan1.target_duty_cycle);
-		break;
-	case PWM_FAN_PCONTROL:
-		LCD_I2C_printf(&hlcd3, "%u %u %u%%",
-				(uint16_t) fan1.current_speed,
-				(uint16_t) fan1.target_speed,
-				(uint16_t) fan1.target_duty_cycle);
-		break;
-	default:
-		LCD_I2C_printStr(&hlcd3, " !!! ERROR !!! ");
-		break;
-	}
+	generate_fan_display_line(disp, &fan1);
+	LCD_I2C_printStr(&hlcd3, disp);
 
 	// fan 2
 	LCD_I2C_SetCursor(&hlcd3, 2, 5);
-	switch(fan2.mode) {
-	case PWM_FAN_CALIBRATION_START:
-		LCD_I2C_printStr(&hlcd3, "Calibrating...");
-		break;
-//	case PWM_FAN_CALIBRATION_START_LEVEL:
-//		LCD_I2C_printStr(&hlcd3, "Calibrating...1");
-//		break;
-	case PWM_FAN_CALIBRATION_MIN_SPEED:
-		LCD_I2C_printStr(&hlcd3, "Calibrating...2");
-		break;
-	case PWM_FAN_CALIBRATION_MAX_SPEED:
-		LCD_I2C_printStr(&hlcd3, "Calibrating...3");
-		break;
-	case PWM_FAN_UNCONFIGURED:
-		LCD_I2C_printStr(&hlcd3, "Unconfigured");
-		break;
-	case PWM_FAN_DIRECT:
-		LCD_I2C_printf(&hlcd3, "%u Manu %u%%",
-				(uint16_t) fan2.current_speed,
-				(uint16_t) fan2.target_duty_cycle);
-		break;
-	case PWM_FAN_PCONTROL:
-		LCD_I2C_printf(&hlcd3, "%u %u %u%%",
-				(uint16_t) fan2.current_speed,
-				(uint16_t) fan2.target_speed,
-				(uint16_t) fan2.target_duty_cycle);
-		break;
-	default:
-		LCD_I2C_printStr(&hlcd3, "!!! ERROR !!!");
-		break;
-	}
-
+	generate_fan_display_line(disp, &fan2);
+	LCD_I2C_printStr(&hlcd3, disp);
 	// BMP280
 	LCD_I2C_SetCursor(&hlcd3, 3, 5);
-	LCD_I2C_printf(&hlcd3, "%dC", (int) temperature);
+	sprintf(disp, "%dC", (int) temperature);
+	LCD_I2C_printStr(&hlcd3, disp);
 }
 
 void generate_fan_display_line(char *str, PWM_Fan_HandleTypeDef *fan) {
 	char* curr_speed_str[5], tgt_duty_str[5], tgt_speed_str[5];
 	switch(fan->mode) {
 		case PWM_FAN_CALIBRATION_START:
-			sprintf(str, "Calibrating... ");
+			sprintf(str, "Initializing...");
 			break;
 		case PWM_FAN_CALIBRATION_MIN_SPEED:
-			sprintf(str, "Calibrating...2");
+			sprintf(str, "Calibrating...1");
+			break;
+		case PWM_FAN_CALIBRATION_MAX_START:
+			sprintf(str, "Initializing...");
 			break;
 		case PWM_FAN_CALIBRATION_MAX_SPEED:
-			sprintf(str, "Calibrating...3");
+			sprintf(str, "Calibrating...2");
 			break;
 		case PWM_FAN_UNCONFIGURED:
 			sprintf(str, "Unconfigured   ");
 			break;
 		case PWM_FAN_DIRECT:
-			sprintf(curr_speed_str, "%u", (uint16_t) fan->current_speed);
-			strpad(curr_speed_str, ' ', 4);
-			sprintf(tgt_duty_str, "%u%%", (uint16_t) fan->target_duty_cycle);
-			strpad(tgt_duty_str, ' ', 4);
-			sprintf(str, "%s Manu %s",
-					curr_speed_str, tgt_duty_str);
+			sprintf(&curr_speed_str, "%u", (uint16_t) fan->current_speed);
+			strpad(&curr_speed_str, ' ', 4);
+			sprintf(&tgt_duty_str, "%u%%", (uint16_t) fan->target_duty_cycle);
+			strpad(&tgt_duty_str, ' ', 4);
+			sprintf(str, "%s Manu %s ",
+					&curr_speed_str, &tgt_duty_str);
 			break;
 		case PWM_FAN_PCONTROL:
-			sprintf(curr_speed_str, "%u", (uint16_t) fan->current_speed);
-			strpad(curr_speed_str, ' ', 4);
-			sprintf(tgt_speed_str, "%u", (uint16_t) fan->target_speed);
-			strpad(tgt_speed_str, ' ', 4);
-			sprintf(tgt_duty_str, "%u%%", (uint16_t) fan->target_duty_cycle);
-			strpad(tgt_duty_str, ' ', 4);
-			sprintf(str, "%u %u %u ",
-					curr_speed_str,
-					tgt_speed_str,
-					tgt_duty_str);
+			sprintf(&curr_speed_str, "%u", (uint16_t) fan->current_speed);
+			strpad(&curr_speed_str, ' ', 4);
+			sprintf(&tgt_speed_str, "%u", (uint16_t) fan->target_speed);
+			strpad(&tgt_speed_str, ' ', 4);
+			sprintf(&tgt_duty_str, "%u%%", (uint16_t) fan->target_duty_cycle);
+			strpad(&tgt_duty_str, ' ', 4);
+			sprintf(str, "%s %s %s ",
+					&curr_speed_str,
+					&tgt_speed_str,
+					&tgt_duty_str);
 			break;
 		default:
-			char error_str[15] = "!!! ERROR !!!";
-			strpad(error_str, ' ', 15);
-			LCD_I2C_printStr(&hlcd3, error_str);
+			sprintf(str, " !!! ERROR !!! ");
 			break;
 		}
 }
