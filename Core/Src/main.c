@@ -212,6 +212,12 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
+/**
+  * @brief  TIM capture callback
+  * @note   Called every time the timer grabs a revolution of the fan
+  * @param  None
+  * @retval None
+  */
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	// This is pure insanity, don't you ever dare do it like this
 	if(htim->Instance == TIM2) {
@@ -225,10 +231,21 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	}
 }
 
+/**
+  * @brief  Read BMP280 measurements
+  * @param  None
+  * @retval None
+  */
 void grab_bmp_measurement() {
 	bmp280_read_float(&bmp, &temperature, NULL, NULL);
 }
 
+/**
+  * @brief  Post sensor status via UART
+  * @note   Posts current measurements via USART3 in CSV-like format
+  * @param  None
+  * @retval None
+  */
 void uart_post_sensors() {
 	char buffer[100] = "";
 	sprintf(buffer, "fan1,%f,%f,%f,%u\r\n",
@@ -251,6 +268,12 @@ void uart_post_sensors() {
 	HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 100);
 }
 
+/**
+  * @brief  Prepare display to display measurements
+  * @note   Renders a table on the character display to render the measurements in
+  * @param  None
+  * @retval None
+  */
 void prepare_display() {
   LCD_I2C_printStr(&hlcd3, "SNSR READ TRGT DUTY");
   LCD_I2C_SetCursor(&hlcd3, 1, 0);
@@ -261,6 +284,12 @@ void prepare_display() {
   LCD_I2C_printStr(&hlcd3, "Temp");
 }
 
+/**
+  * @brief  Display update callback
+  * @note   This function is called every time display needs to be updated with fresh measurements
+  * @param  None
+  * @retval None
+  */
 void update_display() {
 
 	// display str buffer
@@ -281,17 +310,26 @@ void update_display() {
 	LCD_I2C_printStr(&hlcd3, disp);
 }
 
+/**
+  * @brief  Generate fan status line for LCD display
+  * @note   This function is called  when TIM8 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  str : string to save the status line into
+  * @param  fan : fan handle
+  * @retval None
+  */
 void generate_fan_display_line(char *str, PWM_Fan_HandleTypeDef *fan) {
 	char* curr_speed_str[5], tgt_duty_str[5], tgt_speed_str[5];
 	switch(fan->mode) {
 		case PWM_FAN_CALIBRATION_START:
-			sprintf(str, "Initializing...");
+			sprintf(str, "Init... Stage 1");
 			break;
 		case PWM_FAN_CALIBRATION_MIN_SPEED:
 			sprintf(str, "Calibrating...1");
 			break;
 		case PWM_FAN_CALIBRATION_MAX_START:
-			sprintf(str, "Initializing...");
+			sprintf(str, "Init... Stage 2");
 			break;
 		case PWM_FAN_CALIBRATION_MAX_SPEED:
 			sprintf(str, "Calibrating...2");

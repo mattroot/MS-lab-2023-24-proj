@@ -1,6 +1,17 @@
 #include "pwm_fan.h"
 #include "tim.h"
 
+/**
+  * @brief  Initialize PWM_Fan_HandleTypeDef
+  * @note   Prepare a fan to be controlled with PWM
+  * Create a model of the fan in controller's memory
+  * @param  fan : fan handle
+  * @param  htim_pwm : TIM handle for sending PWM signal
+  * @param  htim_tacho : TIM handle for reading speed
+  * @param  pwm_channel : TIM channel for sending PWM signal
+  * @param  tacho_channel : TIM channel for reasing speed
+  * @retval None
+  */
 void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
 		TIM_HandleTypeDef *htim_pwm,
 		TIM_HandleTypeDef *htim_tacho,
@@ -50,6 +61,12 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
     HAL_TIM_IC_Start_IT(fan->htim_tacho, fan->tacho_channel);
 }
 
+/**
+  * @brief  Schedule calibration
+  * @note   Put the fan into calibration mode
+  * @param  fan : fan handle
+  * @retval None
+  */
 void pwm_fan_schedule_calibration(PWM_Fan_HandleTypeDef *fan) {
 	fan->calibration_cycle_counter = 0;
 	fan->min_speed = 999999.0f;
@@ -57,6 +74,13 @@ void pwm_fan_schedule_calibration(PWM_Fan_HandleTypeDef *fan) {
 	fan->mode = PWM_FAN_CALIBRATION_START;
 }
 
+/**
+  * @brief  Set fan RPM
+  * @note   Set desired fan RPM in P-control mode. Must be switched into P-Control mode first.
+  * @param  fan : fan handle
+  * @param  target_speed : target speed
+  * @retval None
+  */
 void pwm_fan_set(PWM_Fan_HandleTypeDef *fan, float target_speed) {
     // Ensure target speed is within the valid range
     if (target_speed > fan->max_speed) {
@@ -68,6 +92,13 @@ void pwm_fan_set(PWM_Fan_HandleTypeDef *fan, float target_speed) {
     fan->target_speed = target_speed;
 }
 
+/**
+  * @brief  Set duty cycle
+  * @note   Set fan PWM duty cycle in %
+  * @param  fan : fan handle
+  * @param  duty_cycle : duty cycle in %
+  * @retval None
+  */
 void pwm_fan_set_duty_cycle(PWM_Fan_HandleTypeDef *fan, float duty_cycle) {
 	// Ensure duty is within the valid range
 	if (duty_cycle > 100) {
@@ -80,6 +111,13 @@ void pwm_fan_set_duty_cycle(PWM_Fan_HandleTypeDef *fan, float duty_cycle) {
 					((uint16_t)(fan->target_duty_cycle * (fan->autoreload+1) / 100) - 1));
 }
 
+/**
+  * @brief  Set duty cycle - raw
+  * @note   Set fan PWM duty cycle in raw register value
+  * @param  fan : fan handle
+  * @param  compare_register : CCR value
+  * @retval duty cycle in %
+  */
 float pwm_fan_set_duty_cycle_raw(PWM_Fan_HandleTypeDef *fan, uint16_t compare_register) {
 	__HAL_TIM_SET_COMPARE(fan->htim_pwm, fan->pwm_channel, compare_register);
 
@@ -88,6 +126,12 @@ float pwm_fan_set_duty_cycle_raw(PWM_Fan_HandleTypeDef *fan, uint16_t compare_re
 	return fan->target_duty_cycle;
 }
 
+/**
+  * @brief  Speed update callback
+  * @note   Run this function every revolution to update speed of the fan
+  * @param  fan : fan handle
+  * @retval Fan speed in RPM
+  */
 float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan) {
 	// Save the last capture time
 	fan->last_read = fan->current_read;
@@ -106,8 +150,15 @@ float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan) {
 	return fan->current_speed;
 }
 
+/**
+  * @brief  Fan state update callback
+  * @note   Run this function every PWM cycle to update state of the fan
+  * The fan is operated via a software state machine, allowing to set different modes of control.
+  * This function also implements calibration algorithm.
+  * @param  fan : fan handle
+  * @retval Fan speed in RPM
+  */
 float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
-     // Read TACHO input capture value to calculate current speed
 	switch(fan->mode) {
 //	case PWM_FAN_DIRECT:
 //		pwm_fan_set_duty_cycle(fan, fan->target_duty_cycle);
@@ -167,6 +218,12 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
     return fan->current_speed;
 }
 
+/**
+  * @brief  Fan stop check
+  * @note   This function determines if the fan is stopped.
+  * @param  fan : fan handle
+  * @retval Boolean
+  */
 uint16_t pwm_fan_is_stopped(PWM_Fan_HandleTypeDef *fan) {
 	uint32_t metric = fan->htim_tacho->Instance->CNT;
 	if(metric - fan->current_read > TACHO_STOPPED_THRESHOLD) return 1;
