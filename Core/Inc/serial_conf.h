@@ -1,4 +1,7 @@
 #ifndef SERIAL_CONF_H
 #define SERIAL_CONF_H
 
+#define SERIAL_MSG_LEN 20
+#define SERIAL_POST_LEN 50
+
 #endif //SERIAL_CONF_H

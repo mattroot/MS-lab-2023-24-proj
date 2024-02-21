@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "crc.h"
 #include "dma.h"
 #include "i2c.h"
 #include "tim.h"
@@ -31,7 +30,9 @@
 #include "lcd.h"
 #include "lcd_config.h"
 #include "pwm_fan.h"
+#include "pwm_fan_conf.h"
 #include "serial.h"
+#include "serial_conf.h"
 #include "strhelp.h"
 
 /* USER CODE END Includes */
@@ -55,9 +56,8 @@
 
 /* USER CODE BEGIN PV */
 
-// I'm going nuts
-PWM_Fan_HandleTypeDef fan1;
-PWM_Fan_HandleTypeDef fan2;
+char usart_data[SERIAL_MSG_LEN];
+
 BMP280_HandleTypedef bmp;
 
 uint16_t fan1_speed  = 0;
@@ -110,7 +110,6 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM5_Init();
   MX_TIM2_Init();
-  MX_CRC_Init();
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
@@ -138,6 +137,9 @@ int main(void)
 
   // Start serial output timer
   HAL_TIM_PWM_Start_IT(&htim5, TIM_CHANNEL_1);
+
+  // Make UART listen for commands
+  HAL_UART_Receive_IT(&huart3, usart_data, SERIAL_MSG_LEN);
 
   /* USER CODE END 2 */
 
@@ -211,6 +213,22 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+/**
+  * @brief  Rx Transfer completed callback.
+  * @param  huart UART handle.
+  * @retval None
+  */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if(huart == &huart3)
+  {
+	// just shamelessly call this and pass it there, bad idea but works(tm)
+    serial_recv(&huart3, usart_data, SERIAL_MSG_LEN);
+
+    // await next msg
+    HAL_UART_Receive_IT(&huart3, usart_data, SERIAL_MSG_LEN);
+  }
+}
 
 /**
   * @brief  TIM capture callback

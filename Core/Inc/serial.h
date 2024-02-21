@@ -1,7 +1,6 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
-#include "serial_conf.h"
 #include "usart.h"
 #include "stm32f7xx_it.h"
 

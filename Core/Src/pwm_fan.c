@@ -1,5 +1,6 @@
 #include "pwm_fan.h"
 #include "tim.h"
+#include "pwm_fan_conf.h"
 
 /**
   * @brief  Initialize PWM_Fan_HandleTypeDef
