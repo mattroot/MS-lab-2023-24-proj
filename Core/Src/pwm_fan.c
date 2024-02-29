@@ -168,7 +168,8 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 		// Calculate error
 		fan->ctrl_error = fan->target_speed - fan->current_speed;
 		// Calculate PWM duty cycle
-		uint16_t pwm_value = fan->ctrl_gain * fan->target_speed;
+	    float integral += Ki * Ts * fan->ctrl_error;
+		uint16_t pwm_value = fan->ctrl_gain * fan->ctrl_error + integral;
 		// Set PWM duty cycle
 		pwm_fan_set_duty_cycle_raw(fan, pwm_value);
 		break;
@@ -204,7 +205,7 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 
 			// set to 1000 RPM after calibration
 			fan->mode = PWM_FAN_PCONTROL;
-			pwm_fan_set(fan, 700.0f);
+			pwm_fan_set(fan, 1000.0f);
 		}
 		break;
 	default:
