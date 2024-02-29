@@ -139,7 +139,8 @@ int main(void)
   HAL_TIM_PWM_Start_IT(&htim5, TIM_CHANNEL_1);
 
   // Make UART listen for commands
-  HAL_UART_Receive_IT(&huart3, usart_data, SERIAL_MSG_LEN);
+  // HAL_UART_Receive_IT(&huart3, usart_data, SERIAL_MSG_LEN);
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart3, usart_data, SERIAL_MSG_LEN);
 
   /* USER CODE END 2 */
 
@@ -218,15 +219,15 @@ void SystemClock_Config(void)
   * @param  huart UART handle.
   * @retval None
   */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 {
   if(huart == &huart3)
   {
 	// just shamelessly call this and pass it there, bad idea but works(tm)
-    serial_recv(&huart3, usart_data, SERIAL_MSG_LEN);
+    serial_recv(&huart3, usart_data, size);
 
     // await next msg
-    HAL_UART_Receive_IT(&huart3, usart_data, SERIAL_MSG_LEN);
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart3, usart_data, SERIAL_MSG_LEN);
   }
 }
 
