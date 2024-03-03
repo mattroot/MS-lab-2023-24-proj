@@ -69,9 +69,10 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
   */
 void pwm_fan_schedule_calibration(PWM_Fan_HandleTypeDef *fan) {
 	fan->calibration_cycle_counter = 0;
-	fan->min_speed = 0.0f;
+	fan->min_speed = 999999.0f;
 	fan->max_speed = 0.0f;
-	fan->mode = PWM_FAN_CALIBRATION_MAX_START;
+	pwm_fan_set_duty_cycle(fan, 0);
+	fan->mode = PWM_FAN_CALIBRATION_START;
 }
 
 /**

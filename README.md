@@ -15,5 +15,7 @@ This project is prepared as Microprocessor Systems course on Poznan University o
 The following components have been used during development of this project:
  - [BMP280 driver for STM32F0](https://github.com/ciastkolog/BMP280_STM32) (MiT licensed)
  - [I2C character display example for NUCLEO-F746ZG](https://github.com/adrianwojcikpp/NUCLEO-F746ZG-Examples-ver-2023-24/tree/main/EXTRAS/LCD_I2C_Example)
- - [drmrvr12](https://figdor32.pl)
+
+Special thanks to:
+ - [figdor32](https://figdor32.pl)
  

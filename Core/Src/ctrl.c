@@ -23,9 +23,20 @@ void ctrl_init(Ctrl_HandleTypeDef *ctrl, float ctrl_gain, float target_speed, ui
 uint16_t ctrl_call(Ctrl_HandleTypeDef *ctrl, float measure) {
 	ctrl->ctrl_error = ctrl->target_speed - measure;
 
-	ctrl->value =
-		(ctrl->ctrl_gain * ctrl->target_speed)
-		+ (ctrl->p_gain * ctrl->ctrl_gain * ctrl->ctrl_error);
+	// check CLT
+	if(
+		((ctrl->ctrl_error / ctrl->target_speed) < (1 - ctrl->closed_loop_threshold))
+		|| ((ctrl->ctrl_error / ctrl->target_speed) > (1 + ctrl->closed_loop_threshold))
+	) {
+		// if outside CLT, use open-loop control
+		ctrl->value = ctrl->ctrl_gain * ctrl->target_speed;
+	}
+	else {
+		// if inside CLT, use closed-loop control
+		ctrl->value =
+			(ctrl->ctrl_gain * ctrl->target_speed)
+			+ (ctrl->p_gain * ctrl->ctrl_gain * ctrl->ctrl_error);
+	}
 
 	if(ctrl->value > ctrl->brickwall)
 		ctrl->value = ctrl->brickwall;
