@@ -270,7 +270,7 @@ void uart_post_sensors() {
 	sprintf(buffer, "fan1,%f,%f,%f,%u\r\n",
 			fan1.current_speed,
 			fan1.target_duty_cycle,
-			fan1.target_speed,
+			fan1.hctrl->target_speed,
 			(uint16_t)fan1.mode
 			);
 	HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 100);
@@ -278,7 +278,7 @@ void uart_post_sensors() {
 	sprintf(buffer, "fan2,%f,%f,%f,%u\r\n",
 			fan2.current_speed,
 			fan2.target_duty_cycle,
-			fan2.target_speed,
+			fan2.hctrl->target_speed,
 			(uint16_t)fan2.mode
 			);
 	HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 100);
@@ -367,7 +367,7 @@ void generate_fan_display_line(char *str, PWM_Fan_HandleTypeDef *fan) {
 		case PWM_FAN_PCONTROL:
 			sprintf(&curr_speed_str, "%u", (uint16_t) fan->current_speed);
 			strpad(&curr_speed_str, ' ', 4);
-			sprintf(&tgt_speed_str, "%u", (uint16_t) fan->target_speed);
+			sprintf(&tgt_speed_str, "%u", (uint16_t) fan->hctrl->target_speed);
 			strpad(&tgt_speed_str, ' ', 4);
 			sprintf(&tgt_duty_str, "%u%%", (uint16_t) fan->target_duty_cycle);
 			strpad(&tgt_duty_str, ' ', 4);

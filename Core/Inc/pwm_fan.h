@@ -2,6 +2,7 @@
 #define PWM_FAN_H
 
 #include "tim.h"
+#include "ctrl.h"
 
 typedef struct {
 	// handles
@@ -9,6 +10,9 @@ typedef struct {
     TIM_HandleTypeDef *htim_tacho;
     uint16_t pwm_channel;
     uint16_t tacho_channel;
+
+    // PI controller
+    Ctrl_HandleTypeDef *hctrl;
 
     // constant registers for easy access
     uint16_t autoreload;
@@ -22,12 +26,9 @@ typedef struct {
 
     // fan speed control
     float target_duty_cycle;
-    float target_speed;
 
     // fan speed monitoring
     float current_speed;
-    float speed_error;
-    float ctrl_error;
 
     // TACHO estimation helpers
     uint32_t last_read;

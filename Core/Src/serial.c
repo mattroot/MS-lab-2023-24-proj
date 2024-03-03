@@ -3,6 +3,7 @@
 #include "pwm_fan_conf.h"
 #include "pwm_fan.h"
 #include "strhelp.h"
+#include "gpio.h"
 #include <stdio.h>
 
 void serial_recv(UART_HandleTypeDef *huart, char* message, uint16_t length) {
@@ -86,6 +87,9 @@ void serial_recv(UART_HandleTypeDef *huart, char* message, uint16_t length) {
         } else {
             snprintf(response, sizeof(response), "NAK\r\n");
         }
+    }
+    else if(!strncmp(chop[0], "RST", 3)) {
+    	NVIC_SystemReset();
     }
     else {
         snprintf(response, sizeof(response), "NAK\r\n");

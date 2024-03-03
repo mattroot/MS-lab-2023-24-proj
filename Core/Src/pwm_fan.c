@@ -24,6 +24,9 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
     fan->pwm_channel = pwm_channel;
     fan->tacho_channel = tacho_channel;
 
+    // malloc the controller
+    fan->hctrl = malloc(sizeof(Ctrl_HandleTypeDef));
+
     // constant registers for easy access
     fan->autoreload = htim_pwm->Instance->ARR;
     fan->prescaler = htim_pwm->Instance->PSC;
@@ -36,12 +39,9 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
 
 	// fan speed control
 	fan->target_duty_cycle = 0.0f;
-	fan->target_speed = 0.0f;
 
 	// fan speed monitoring
 	fan->current_speed = 0;
-	fan->speed_error = 0;
-	fan->ctrl_error = 0;
 
 	// TACHO estimation helpers
 	fan->last_read = 0;
@@ -53,7 +53,6 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
 	fan->calibration_max = 0;
 
 	// controller settings
-	fan->ctrl_gain = 0;
 	fan->mode = PWM_FAN_UNCONFIGURED;
 
     // Initialize PWM
@@ -90,7 +89,7 @@ void pwm_fan_set(PWM_Fan_HandleTypeDef *fan, float target_speed) {
         target_speed = fan->min_speed;
     }
 
-    fan->target_speed = target_speed;
+    fan->hctrl->target_speed = target_speed;
 }
 
 /**
@@ -140,13 +139,20 @@ float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan) {
 	fan->current_read = __HAL_TIM_GET_COUNTER(fan->htim_tacho);
 
 	// Calculate the time between the falling edges
-	uint32_t timeDiff = fan->current_read - fan->last_read;
+	uint32_t time_diff;
+	if(fan->current_read < fan->last_read) {
+		uint16_t nlread = UINT16_MAX - fan->last_read;
+		time_diff = fan->current_read + nlread;
+	}
+	else {
+		time_diff = fan->current_read - fan->last_read;
+	}
 
 	// NOTE: this is extremely specific for STM32F767ZITx timers @ APB1
 	// TODO: why still unreliable
 	fan->current_speed =
 					60.0f * (float)HAL_RCC_GetPCLK1Freq() * 2.0f
-					/ (float)timeDiff / (float)(fan->tacho_prescaler+1) / TACHO_PULSE_PER_REV;
+					/ (float)time_diff / (float)(fan->tacho_prescaler+1) / PWM_FAN_TACHO_PULSE_PER_REV;
 
 	return fan->current_speed;
 }
@@ -166,11 +172,13 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 //		break;
 	case PWM_FAN_PCONTROL: {
 		// Calculate error
-		fan->ctrl_error = fan->target_speed - fan->current_speed;
+//		fan->ctrl_error = fan->target_speed - fan->current_speed;
 		// Calculate PWM duty cycle
-	    float integral += Ki * Ts * fan->ctrl_error;
-		uint16_t pwm_value = fan->ctrl_gain * fan->ctrl_error + integral;
+//	    float integral += Ki * Ts * fan->ctrl_error;
+//		uint16_t pwm_value = fan->ctrl_gain * fan->ctrl_error + integral;
 		// Set PWM duty cycle
+		// uint16_t pwm_value = fan->ctrl_gain * fan->ctrl_error + integral;
+		uint16_t pwm_value = ctrl_call(fan->hctrl, fan->current_speed);
 		pwm_fan_set_duty_cycle_raw(fan, pwm_value);
 		break;
 	}
@@ -203,9 +211,10 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 			fan->calibration_cycle_counter = 0;
 			fan->ctrl_gain = (float) fan->autoreload / fan->max_speed;
 
+			// initialize P-type controller
 			// set to 1000 RPM after calibration
+			ctrl_init(fan->hctrl, fan->ctrl_gain, 0, 1000.0f, fan->autoreload, fan->max_speed);
 			fan->mode = PWM_FAN_PCONTROL;
-			pwm_fan_set(fan, 1000.0f);
 		}
 		break;
 	default:
@@ -228,7 +237,7 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
   */
 uint16_t pwm_fan_is_stopped(PWM_Fan_HandleTypeDef *fan) {
 	uint32_t metric = fan->htim_tacho->Instance->CNT;
-	if(metric - fan->current_read > TACHO_STOPPED_THRESHOLD) return 1;
+	if(metric - fan->current_read > PWM_FAN_TACHO_STOPPED_THRESHOLD) return 1;
 	return 0;
 }
 
