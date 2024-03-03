@@ -34,6 +34,8 @@
 #include "serial.h"
 #include "serial_conf.h"
 #include "strhelp.h"
+#include "lcdal.h"
+#include "temp.h"
 
 /* USER CODE END Includes */
 
@@ -58,11 +60,8 @@
 
 char usart_data[SERIAL_MSG_LEN];
 
-BMP280_HandleTypedef bmp;
-
-uint16_t fan1_speed  = 0;
-uint16_t fan2_speed  = 0;
-float temperature = 0;
+uint16_t fan1_speed = 0;
+uint16_t fan2_speed = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -123,10 +122,7 @@ int main(void)
   prepare_display();
 
   // Initialize BMP280 sensor
-  bmp280_init_default_params(&bmp.params);
-  bmp.addr = BMP280_I2C_ADDRESS_0;
-  bmp.i2c = &hi2c1;
-  bmp280_init(&bmp, &bmp.params);
+  bmp_init();
 
   // initialize fans
   pwm_fan_init(&fan1, &htim3, &htim2, TIM_CHANNEL_1, TIM_CHANNEL_1);
@@ -251,15 +247,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 }
 
 /**
-  * @brief  Read BMP280 measurements
-  * @param  None
-  * @retval None
-  */
-void grab_bmp_measurement() {
-	bmp280_read_float(&bmp, &temperature, NULL, NULL);
-}
-
-/**
   * @brief  Post sensor status via UART
   * @note   Posts current measurements via USART3 in CSV-like format
   * @param  None
@@ -285,101 +272,6 @@ void uart_post_sensors() {
 
 	sprintf(buffer, "temp,%f\r\n", temperature);
 	HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 100);
-}
-
-/**
-  * @brief  Prepare display to display measurements
-  * @note   Renders a table on the character display to render the measurements in
-  * @param  None
-  * @retval None
-  */
-void prepare_display() {
-  LCD_I2C_printStr(&hlcd3, "SNSR READ TRGT DUTY");
-  LCD_I2C_SetCursor(&hlcd3, 1, 0);
-  LCD_I2C_printStr(&hlcd3, "Fan1");
-  LCD_I2C_SetCursor(&hlcd3, 2, 0);
-  LCD_I2C_printStr(&hlcd3, "Fan2");
-  LCD_I2C_SetCursor(&hlcd3, 3, 0);
-  LCD_I2C_printStr(&hlcd3, "Temp");
-}
-
-/**
-  * @brief  Display update callback
-  * @note   This function is called every time display needs to be updated with fresh measurements
-  * @param  None
-  * @retval None
-  */
-void update_display() {
-
-	// display str buffer
-	char disp[15];
-
-	// fan 1
-	LCD_I2C_SetCursor(&hlcd3, 1, 5);
-	generate_fan_display_line(disp, &fan1);
-	LCD_I2C_printStr(&hlcd3, disp);
-
-	// fan 2
-	LCD_I2C_SetCursor(&hlcd3, 2, 5);
-	generate_fan_display_line(disp, &fan2);
-	LCD_I2C_printStr(&hlcd3, disp);
-	// BMP280
-	LCD_I2C_SetCursor(&hlcd3, 3, 5);
-	sprintf(disp, "%dC", (int) temperature);
-	LCD_I2C_printStr(&hlcd3, disp);
-}
-
-/**
-  * @brief  Generate fan status line for LCD display
-  * @note   This function is called  when TIM8 interrupt took place, inside
-  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
-  * a global variable "uwTick" used as application time base.
-  * @param  str : string to save the status line into
-  * @param  fan : fan handle
-  * @retval None
-  */
-void generate_fan_display_line(char *str, PWM_Fan_HandleTypeDef *fan) {
-	char* curr_speed_str[5], tgt_duty_str[5], tgt_speed_str[5];
-	switch(fan->mode) {
-		case PWM_FAN_CALIBRATION_START:
-			sprintf(str, "Init... Stage 1");
-			break;
-		case PWM_FAN_CALIBRATION_MIN_SPEED:
-			sprintf(str, "Calibrating...1");
-			break;
-		case PWM_FAN_CALIBRATION_MAX_START:
-			sprintf(str, "Init... Stage 2");
-			break;
-		case PWM_FAN_CALIBRATION_MAX_SPEED:
-			sprintf(str, "Calibrating...2");
-			break;
-		case PWM_FAN_UNCONFIGURED:
-			sprintf(str, "Unconfigured   ");
-			break;
-		case PWM_FAN_DIRECT:
-			sprintf(&curr_speed_str, "%u", (uint16_t) fan->current_speed);
-			strpad(&curr_speed_str, ' ', 4);
-			sprintf(&tgt_duty_str, "%u%%", (uint16_t) fan->target_duty_cycle);
-			strpad(&tgt_duty_str, ' ', 4);
-			sprintf(str, "%s Manu %s ",
-					&curr_speed_str, &tgt_duty_str);
-			break;
-		case PWM_FAN_PCONTROL:
-			sprintf(&curr_speed_str, "%u", (uint16_t) fan->current_speed);
-			strpad(&curr_speed_str, ' ', 4);
-			sprintf(&tgt_speed_str, "%u", (uint16_t) fan->hctrl->target_speed);
-			strpad(&tgt_speed_str, ' ', 4);
-			sprintf(&tgt_duty_str, "%u%%", (uint16_t) fan->target_duty_cycle);
-			strpad(&tgt_duty_str, ' ', 4);
-			sprintf(str, "%s %s %s ",
-					&curr_speed_str,
-					&tgt_speed_str,
-					&tgt_duty_str);
-			break;
-		default:
-			sprintf(str, " !!! ERROR !!! ");
-			break;
-		}
 }
 
 /* USER CODE END 4 */
