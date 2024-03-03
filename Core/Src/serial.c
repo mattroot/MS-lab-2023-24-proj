@@ -26,9 +26,11 @@ void serial_recv(UART_HandleTypeDef *huart, char* message, uint16_t length) {
     }
 
     // The great switching
+    // ping
     if(!strncmp(chop[0], "PNG", 3)) {
         snprintf(response, sizeof(response), "pong!\r\n");
     }
+    // get calibration parameters
     else if(!strncmp(chop[0], "GCL", 3)) {
         if(!strncmp(chop[1], "fan1", 4)) {
             snprintf(response, sizeof(response), "ACK,GCL,fan1,%f,%f\r\n",
@@ -42,6 +44,7 @@ void serial_recv(UART_HandleTypeDef *huart, char* message, uint16_t length) {
             snprintf(response, sizeof(response), "NAK\r\n");
         }
     }
+    // set fan value
     else if(!strncmp(chop[0], "SET", 3)) {
         if(!strncmp(chop[1], "fan1", 4)) {
             snprintf(response, sizeof(response), "ACK,SET,fan1\r\n");
@@ -77,6 +80,7 @@ void serial_recv(UART_HandleTypeDef *huart, char* message, uint16_t length) {
             snprintf(response, sizeof(response), "NAK");
         }
     }
+    // request calibration
     else if(!strncmp(chop[0], "CAL", 3)) {
         if(!strncmp(chop[1], "fan1", 4)) {
             snprintf(response, sizeof(response), "ACK,CAL,fan1\r\n");
@@ -88,9 +92,14 @@ void serial_recv(UART_HandleTypeDef *huart, char* message, uint16_t length) {
             snprintf(response, sizeof(response), "NAK\r\n");
         }
     }
+    // soft reset
     else if(!strncmp(chop[0], "RST", 3)) {
     	NVIC_SystemReset();
     }
+    // reinitialize display
+    else if(!strncmp(chop[0], "RSD", 3)) {
+
+	}
     else {
         snprintf(response, sizeof(response), "NAK\r\n");
     }

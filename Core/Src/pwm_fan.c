@@ -69,9 +69,9 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
   */
 void pwm_fan_schedule_calibration(PWM_Fan_HandleTypeDef *fan) {
 	fan->calibration_cycle_counter = 0;
-	fan->min_speed = 999999.0f;
+	fan->min_speed = 0.0f;
 	fan->max_speed = 0.0f;
-	fan->mode = PWM_FAN_CALIBRATION_START;
+	fan->mode = PWM_FAN_CALIBRATION_MAX_START;
 }
 
 /**
@@ -213,7 +213,7 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 
 			// initialize P-type controller
 			// set to 1000 RPM after calibration
-			ctrl_init(fan->hctrl, fan->ctrl_gain, 0, 1000.0f, fan->autoreload, fan->max_speed);
+			ctrl_init(fan->hctrl, fan->ctrl_gain, 1000.0f, fan->autoreload, fan->max_speed);
 			fan->mode = PWM_FAN_PCONTROL;
 		}
 		break;
