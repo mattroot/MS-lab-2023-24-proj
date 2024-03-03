@@ -25,8 +25,8 @@ uint16_t ctrl_call(Ctrl_HandleTypeDef *ctrl, float measure) {
 
 	// check CLT
 	if(
-		((ctrl->ctrl_error / ctrl->target_speed) < (1 - ctrl->closed_loop_threshold))
-		|| ((ctrl->ctrl_error / ctrl->target_speed) > (1 + ctrl->closed_loop_threshold))
+		((measure / ctrl->target_speed) < (1 - ctrl->closed_loop_threshold))
+		|| ((measure / ctrl->target_speed) > (1 + ctrl->closed_loop_threshold))
 	) {
 		// if outside CLT, use open-loop control
 		ctrl->value = ctrl->ctrl_gain * ctrl->target_speed;
