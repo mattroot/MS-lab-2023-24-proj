@@ -67,16 +67,19 @@ void generate_fan_display_line(char *str, PWM_Fan_HandleTypeDef *fan) {
 	char* curr_speed_str[5], tgt_duty_str[5], tgt_speed_str[5];
 	switch(fan->mode) {
 		case PWM_FAN_CALIBRATION_START:
-			sprintf(str, "Init... Stage 1");
+			sprintf(str, "C. Start       ");
+			break;
+		case PWM_FAN_CALIBRATION_START_DUTY:
+			sprintf(str, "C. Strt Duty   ");
 			break;
 		case PWM_FAN_CALIBRATION_MIN_SPEED:
-			sprintf(str, "Calibrating...1");
+			sprintf(str, "C. Min Speed   ");
 			break;
 		case PWM_FAN_CALIBRATION_MAX_START:
-			sprintf(str, "Init... Stage 2");
+			sprintf(str, "C. Max Strt    ");
 			break;
 		case PWM_FAN_CALIBRATION_MAX_SPEED:
-			sprintf(str, "Calibrating...2");
+			sprintf(str, "C. Max Speed   ");
 			break;
 		case PWM_FAN_UNCONFIGURED:
 			sprintf(str, "Unconfigured   ");

@@ -23,6 +23,7 @@ typedef struct {
     // fan characteristics
     float max_speed;
     float min_speed;
+    float start_pwm_percent;
 
     // fan speed control
     float target_duty_cycle;
@@ -38,6 +39,7 @@ typedef struct {
     uint32_t calibration_cycle_counter;
     float calibration_min;
     float calibration_max;
+    _Bool is_calibrated;
 
     // controller settings
     float ctrl_gain;
@@ -49,8 +51,9 @@ enum PWM_FAN_CTRL_MODE {
 	PWM_FAN_DIRECT  = 1,
 	PWM_FAN_PCONTROL = 2,
 	PWM_FAN_CALIBRATION_START = 3,
-	PWM_FAN_CALIBRATION_MAX_START = 4,
+	PWM_FAN_CALIBRATION_START_DUTY = 7,
 	PWM_FAN_CALIBRATION_MIN_SPEED = 5,
+	PWM_FAN_CALIBRATION_MAX_START = 4,
 	PWM_FAN_CALIBRATION_MAX_SPEED = 6
 };
 

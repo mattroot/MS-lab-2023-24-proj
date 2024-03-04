@@ -1,6 +1,7 @@
 #include "pwm_fan.h"
 #include "tim.h"
 #include "pwm_fan_conf.h"
+#include <stdbool.h>
 
 /**
   * @brief  Initialize PWM_Fan_HandleTypeDef
@@ -26,6 +27,7 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
 
     // malloc the controller
     fan->hctrl = malloc(sizeof(Ctrl_HandleTypeDef));
+	ctrl_init(fan->hctrl, 0, 0, 0, 0);
 
     // constant registers for easy access
     fan->autoreload = htim_pwm->Instance->ARR;
@@ -36,6 +38,7 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
     // fan characteristics
     fan->max_speed = 0;
     fan->min_speed = 0;
+    fan->start_pwm_percent = 0;
 
 	// fan speed control
 	fan->target_duty_cycle = 0.0f;
@@ -51,6 +54,7 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
 	fan->calibration_cycle_counter = 0;
 	fan->calibration_min = 0;
 	fan->calibration_max = 0;
+	fan->is_calibrated = false;
 
 	// controller settings
 	fan->mode = PWM_FAN_UNCONFIGURED;
@@ -90,7 +94,7 @@ void pwm_fan_set(PWM_Fan_HandleTypeDef *fan, float target_speed) {
         target_speed = fan->min_speed;
     }
 
-    fan->hctrl->target_speed = target_speed;
+    ctrl_update_target_speed(fan->hctrl, target_speed);
 }
 
 /**
@@ -150,10 +154,23 @@ float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan) {
 	}
 
 	// NOTE: this is extremely specific for STM32F767ZITx timers @ APB1
-	// TODO: why still unreliable
-	fan->current_speed =
-					60.0f * (float)HAL_RCC_GetPCLK1Freq() * 2.0f
-					/ (float)time_diff / (float)(fan->tacho_prescaler+1) / PWM_FAN_TACHO_PULSE_PER_REV;
+	float spd =
+				60.0f * (float)HAL_RCC_GetPCLK1Freq() * 2.0f
+				/ (float)time_diff / (float)(fan->tacho_prescaler+1) / PWM_FAN_TACHO_PULSE_PER_REV;
+
+#ifdef PWM_FAN_USE_CUTOFF_FILTER
+	// ignore garbage readouts
+	if(!((fan->is_calibrated && (spd > fan->max_speed * 1.1)) || (spd < 0))) {
+		fan->current_speed = spd;
+	}
+#endif
+#ifdef PWM_FAN_USE_EWMA_FILTER
+    fan->current_speed = 	(1 - PWM_FAN_EWMA_FILTER_FACTOR) * fan->current_speed
+    						+ PWM_FAN_EWMA_FILTER_FACTOR * spd;
+#endif
+#ifdef PWM_FAN_USE_BYPASS_FILTER
+	fan->current_speed = spd;
+#endif
 
 	return fan->current_speed;
 }
@@ -184,10 +201,29 @@ float pwm_fan_update(PWM_Fan_HandleTypeDef *fan) {
 		break;
 	}
 	case PWM_FAN_CALIBRATION_START:
-		pwm_fan_set_duty_cycle(fan, 30.0f);
+		pwm_fan_set_duty_cycle(fan, 1.0f);
 		if(fan->calibration_cycle_counter++ > PWM_FAN_CALIBRATION_PERIOD) {
 			fan->calibration_cycle_counter = 0;
-			fan->mode = PWM_FAN_CALIBRATION_MIN_SPEED;
+			fan->mode = PWM_FAN_CALIBRATION_START_DUTY;
+		}
+//		if(pwm_fan_is_stopped(fan)) {
+//			fan->calibration_cycle_counter = 0;
+//			fan->mode = PWM_FAN_CALIBRATION_START_DUTY;
+//		}
+		break;
+	case PWM_FAN_CALIBRATION_START_DUTY:
+		if(fan->calibration_cycle_counter >= PWM_FAN_START_DELAY) {
+			if(pwm_fan_is_stopped(fan)) {
+				fan->calibration_cycle_counter = 0;
+				pwm_fan_set_duty_cycle(fan, fan->target_duty_cycle+1);
+			} else {
+				fan->start_pwm_percent = fan->target_duty_cycle;
+				fan->calibration_cycle_counter = 0;
+				fan->mode = PWM_FAN_CALIBRATION_MIN_SPEED;
+			}
+		}
+		else {
+			fan->calibration_cycle_counter++;
 		}
 		break;
 	case PWM_FAN_CALIBRATION_MIN_SPEED:

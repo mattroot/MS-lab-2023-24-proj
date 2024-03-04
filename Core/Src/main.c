@@ -246,34 +246,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	}
 }
 
-/**
-  * @brief  Post sensor status via UART
-  * @note   Posts current measurements via USART3 in CSV-like format
-  * @param  None
-  * @retval None
-  */
-void uart_post_sensors() {
-	char buffer[100] = "";
-	sprintf(buffer, "fan1,%f,%f,%f,%u\r\n",
-			fan1.current_speed,
-			fan1.target_duty_cycle,
-			fan1.hctrl->target_speed,
-			(uint16_t)fan1.mode
-			);
-	HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 100);
-
-	sprintf(buffer, "fan2,%f,%f,%f,%u\r\n",
-			fan2.current_speed,
-			fan2.target_duty_cycle,
-			fan2.hctrl->target_speed,
-			(uint16_t)fan2.mode
-			);
-	HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 100);
-
-	sprintf(buffer, "temp,%f\r\n", temperature);
-	HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 100);
-}
-
 /* USER CODE END 4 */
 
 /**

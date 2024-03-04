@@ -4,9 +4,10 @@
 #include "usart.h"
 #include "stm32f7xx_it.h"
 
-void serial_post(UART_HandleTypeDef *huart, char *message, uint16_t length);
-void serial_recv(UART_HandleTypeDef *huart, char* message, uint16_t length);
+extern _Bool serial_post_telemetry;
 
+void serial_recv(UART_HandleTypeDef *huart, char* message, uint16_t length);
+void serial_post_sensors();
 
 
 #endif //SERIAL_H

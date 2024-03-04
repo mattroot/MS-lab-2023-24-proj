@@ -366,7 +366,7 @@ void TIM5_IRQHandler(void)
 
 
   grab_bmp_measurement();
-  uart_post_sensors();
+  serial_post_sensors();
   update_display();
 //          }
 //      }
