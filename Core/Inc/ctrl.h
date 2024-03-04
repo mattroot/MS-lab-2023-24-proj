@@ -17,14 +17,9 @@ typedef struct {
 	// Floating point parameters
 	float 		ctrl_gain;
 	float		p_gain;
-	float		closed_loop_threshold; // 0 < CLT < 1
 	float 		target_speed;
 	float		max_speed;
 	float		error;
-
-	// boolean parameters
-	_Bool		closed_loop_engage;
-	_Bool		last_cycle_bad;
 
 	// Raw unsigned integer parameters
 	uint16_t 	brickwall;
@@ -35,7 +30,6 @@ typedef struct {
 
 void ctrl_init(Ctrl_HandleTypeDef *ctrl, float ctrl_gain, float target_speed, uint16_t brickwall, float max_speed);
 uint16_t ctrl_call(Ctrl_HandleTypeDef *ctrl, float measure);
-void ctrl_update_target_speed(Ctrl_HandleTypeDef *ctrl, float target_speed);
-void ctrl_disengage_closed_loop(Ctrl_HandleTypeDef *ctrl);
+uint16_t ctrl_update_target_speed(Ctrl_HandleTypeDef *ctrl, float target_speed);
 
 #endif /* INC_CTRL_H_ */

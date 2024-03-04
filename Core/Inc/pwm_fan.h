@@ -3,6 +3,9 @@
 
 #include "tim.h"
 #include "ctrl.h"
+#ifdef PWM_FAN_USE_FIR_FILTER
+#include "arm_math.h"
+#endif
 
 typedef struct {
 	// handles
@@ -13,6 +16,12 @@ typedef struct {
 
     // PI controller
     Ctrl_HandleTypeDef *hctrl;
+
+#ifdef PWM_FAN_USE_FIR_FILTER
+    // FIR filter
+    arm_fir_instance_f32 *hfir;
+    float *fir_state;
+#endif
 
     // constant registers for easy access
     uint16_t autoreload;

@@ -67,7 +67,6 @@ uint16_t fan2_speed = 0;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void generate_fan_display_line(char *str, PWM_Fan_HandleTypeDef *fan);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -260,9 +259,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
 
-	if (htim->Instance == TIM3) {
+	if (htim->Instance == TIM5) {
 	    fan1_speed = pwm_fan_update(&fan1);
 	    fan2_speed = pwm_fan_update(&fan2);
+
+	    grab_bmp_measurement();
+	    serial_post_sensors();
+	    update_display();
 	  }
 
   /* USER CODE END Callback 0 */

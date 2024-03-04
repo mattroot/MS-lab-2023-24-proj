@@ -364,10 +364,6 @@ void TIM5_IRQHandler(void)
 //          {
 //              __HAL_TIM_CLEAR_IT(&htim5, TIM_IT_UPDATE);
 
-
-  grab_bmp_measurement();
-  serial_post_sensors();
-  update_display();
 //          }
 //      }
   /* USER CODE END TIM5_IRQn 1 */

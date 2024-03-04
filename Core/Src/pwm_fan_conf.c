@@ -49,3 +49,5 @@ PWM_Fan_HandleTypeDef fan2 = {
 		.ctrl_gain = 0,
 		.mode = 0
 };
+
+//const float PWM_FAN_FIR_FILTER_COEFFICIENTS = ;

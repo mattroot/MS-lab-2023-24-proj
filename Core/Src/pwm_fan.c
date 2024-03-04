@@ -2,6 +2,7 @@
 #include "tim.h"
 #include "pwm_fan_conf.h"
 #include <stdbool.h>
+#include "arm_math.h"
 
 /**
   * @brief  Initialize PWM_Fan_HandleTypeDef
@@ -25,9 +26,22 @@ void pwm_fan_init(PWM_Fan_HandleTypeDef *fan,
     fan->pwm_channel = pwm_channel;
     fan->tacho_channel = tacho_channel;
 
-    // malloc the controller
+    // Initialize the controller
     fan->hctrl = malloc(sizeof(Ctrl_HandleTypeDef));
 	ctrl_init(fan->hctrl, 0, 0, 0, 0);
+
+#ifdef PWM_FAN_USE_FIR_FILTER
+	//IInitialize FIR filter
+	fan->hfir = malloc(sizeof(arm_fir_instance_f32));\
+	fan->fir_state = calloc(PWM_FAN_FIR_FILTER_ORDER + 1, sizeof(float));
+	arm_fir_init_f32(
+			fan->hfir,
+			PWM_FAN_FIR_FILTER_ORDER,
+			&PWM_FAN_FIR_FILTER_COEFFICIENTS,
+			fan->fir_state,
+			PWM_FAN_FIR_FILTER_ORDER
+		);
+#endif
 
     // constant registers for easy access
     fan->autoreload = htim_pwm->Instance->ARR;
@@ -94,7 +108,7 @@ void pwm_fan_set(PWM_Fan_HandleTypeDef *fan, float target_speed) {
         target_speed = fan->min_speed;
     }
 
-    ctrl_update_target_speed(fan->hctrl, target_speed);
+    pwm_fan_set_duty_cycle_raw(fan, ctrl_update_target_speed(fan->hctrl, target_speed));
 }
 
 /**
@@ -158,19 +172,28 @@ float pwm_fan_update_speed(PWM_Fan_HandleTypeDef *fan) {
 				60.0f * (float)HAL_RCC_GetPCLK1Freq() * 2.0f
 				/ (float)time_diff / (float)(fan->tacho_prescaler+1) / PWM_FAN_TACHO_PULSE_PER_REV;
 
+	// BEGIN FILTER PIPELINE
+
 #ifdef PWM_FAN_USE_CUTOFF_FILTER
-	// ignore garbage readouts
-	if(!((fan->is_calibrated && (spd > fan->max_speed * 1.1)) || (spd < 0))) {
-		fan->current_speed = spd;
+	if((fan->is_calibrated && (spd > fan->max_speed * 1.1)) || (spd < 0)) {
+		// shamelessly grab last result and continue the filter pipeline
+		spd = fan->current_speed;
 	}
 #endif
+
+#ifdef PWM_FAN_USE_FIR_FILTER
+	float y;
+	arm_fir_f32(fan->hfir, &spd, &y, 1);
+	spd = y;
+#endif
+
 #ifdef PWM_FAN_USE_EWMA_FILTER
     fan->current_speed = 	(1 - PWM_FAN_EWMA_FILTER_FACTOR) * fan->current_speed
     						+ PWM_FAN_EWMA_FILTER_FACTOR * spd;
 #endif
-#ifdef PWM_FAN_USE_BYPASS_FILTER
+
+    // END FILTER PIPELINE
 	fan->current_speed = spd;
-#endif
 
 	return fan->current_speed;
 }
