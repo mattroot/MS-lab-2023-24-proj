@@ -2,7 +2,7 @@
  * strhelp.c
  *
  *  Created on: Feb 6, 2024
- *      Author: why
+ *      Author: Mateusz Korzeniewski <mateusz.korzeniewski@student.put.poznan.pl>
  */
 
 #include "strhelp.h"

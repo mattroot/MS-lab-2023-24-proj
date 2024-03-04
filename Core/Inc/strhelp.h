@@ -2,7 +2,7 @@
  * strhelp.h
  *
  *  Created on: Feb 6, 2024
- *      Author: why
+ *      Author: Mateusz Korzeniewski <mateusz.korzeniewski@student.put.poznan.pl>
  */
 
 #ifndef INC_STRHELP_H_

@@ -2,7 +2,7 @@
  * pwm_fan_conf.c
  *
  *  Created on: Feb 21, 2024
- *      Author: why
+ *      Author: Mateusz Korzeniewski <mateusz.korzeniewski@student.put.poznan.pl>
  */
 
 #include "pwm_fan_conf.h"

@@ -2,7 +2,7 @@
  * temp.c
  *
  *  Created on: Mar 3, 2024
- *      Author: why
+ *      Author: Mateusz Korzeniewski <mateusz.korzeniewski@student.put.poznan.pl>
  */
 
 #include "temp.h"

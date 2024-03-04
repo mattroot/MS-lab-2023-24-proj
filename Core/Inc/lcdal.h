@@ -2,7 +2,7 @@
  * lcdal.h - LCD Abstraction Layer
  *
  *  Created on: Mar 3, 2024
- *      Author: why
+ *      Author: Mateusz Korzeniewski <mateusz.korzeniewski@student.put.poznan.pl>
  */
 
 #ifndef INC_LCDAL_H_

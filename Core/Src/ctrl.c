@@ -2,7 +2,7 @@
  * ctrl.c
  *
  *  Created on: Feb 26, 2024
- *      Author: mk
+ *      Author: Mateusz Korzeniewski <mateusz.korzeniewski@student.put.poznan.pl>
  */
 
 #include "ctrl.h"
